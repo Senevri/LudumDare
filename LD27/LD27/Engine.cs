@@ -101,6 +101,7 @@ namespace LD27
 
         internal void Draw(GraphicsDevice GraphicsDevice, Microsoft.Xna.Framework.GameTime gameTime)
         {
+            GraphicsDevice.SetVertexBuffer(null);
             SetupEffect();
             List<VertexPositionNormalTexture> verts = new List<VertexPositionNormalTexture>();
 
@@ -121,8 +122,7 @@ namespace LD27
                 verts.AddRange(quad.Vertices);
             }
 
-            //vertexBuffer.SetData(positionedQuads.SelectMany((q) => (q.Vertices)).ToArray());
-            GraphicsDevice.SetVertexBuffer(null);
+            //vertexBuffer.SetData(positionedQuads.SelectMany((q) => (q.Vertices)).ToArray());            
             vertexBuffer.SetData(verts.ToArray());
 
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
@@ -132,7 +132,8 @@ namespace LD27
 
             // foreach object in some list 
             foreach (var quad in positionedQuads)
-            {                
+            {
+                Effect.TextureEnabled = true;
                 Effect.Texture = quad.Texture;                
                 foreach (EffectPass pass in Effect.CurrentTechnique.Passes)
                 {
@@ -234,11 +235,14 @@ namespace LD27
             positionedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, new Vector2(0.5f, 0.5f)));
             positionedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(screenw - 32, screenh - 32)) { Rotation = new Vector3(0, 0, (float)(-Math.PI / 8)) });
              * */
-            Color[] mapdata = new Color[screenw * screenh];
+            
             //WorldMap.GetMapImage().GetData<Color>(mapdata);
             //Textures["mapRender"].SetData<Color>(mapdata);
-            var maptexture = Textures["mapRender"];
-            positionedQuads.Add(new PositionedQuad(new TexturedQuad(aspect, 1) { Texture = maptexture }, PixelPositionToVector2(maptexture.Width/2, maptexture.Height/2)));
+            //var maptexture = Textures["mapRender"];
+            positionedQuads.Add(new PositionedQuad(new TexturedQuad(aspect, 1) { 
+                Texture = WorldMap.GetMapImage() }, new Vector2(Camera.X,Camera.Y)));
+             
+
             positionedQuads.Add(Write("this is a test", 400, 300, new Vector3(0, 0, 0), 0.8f));
             positionedQuads.Add(Write(string.Format("{0:0}", seconds), screenw/2, 32, new Vector3(0, 0, 0), 0.1f));
             //positionedQuads[3].Rotation = new Vector3((float)(25 * Math.PI / 180), 0, 0);

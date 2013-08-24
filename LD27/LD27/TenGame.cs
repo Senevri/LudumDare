@@ -20,6 +20,7 @@ namespace LD27
         SpriteBatch spriteBatch;
         Engine engine;
         WorldMap worldMap;
+        private static GraphicsDevice _graphicsDevice;
 
         public TenGame()
             : base()
@@ -29,6 +30,13 @@ namespace LD27
 
             graphics.PreferredBackBufferWidth = 800;
             graphics.PreferredBackBufferHeight = 480;
+            TenGame._graphicsDevice = GraphicsDevice;
+        }
+
+
+        //FIXME ugly
+        public static GraphicsDevice GetGraphicsDevice() {
+            return TenGame._graphicsDevice;
         }
 
         /// <summary>
@@ -87,12 +95,12 @@ namespace LD27
             float yshift = 0;
             float zshift = 0;
             if (kbdState.IsKeyDown(Keys.Up)) {
-                yshift -= 0.1f;
+                yshift += 0.1f;
             }
 
             if (kbdState.IsKeyDown(Keys.Down))
             {
-                yshift += 0.1f;
+                yshift -= 0.1f;
             }
             if (kbdState.IsKeyDown(Keys.Left))
             {
@@ -120,12 +128,23 @@ namespace LD27
 
             engine.Camera = new Vector3(engine.Camera.X + xshift, engine.Camera.Y + yshift, engine.Camera.Z + zshift);
             engine.Target = new Vector3(engine.Target.X + xshift, engine.Target.Y + yshift, -1);
+            int screenw = GraphicsDevice.Viewport.Width;
+            int screenh = GraphicsDevice.Viewport.Height;
+            float aspect = GraphicsDevice.Viewport.AspectRatio;
+
             // TODO: Add your update logic here            
             base.Update(gameTime);
             engine.Update(gameTime);
+            //engine.MoveQuad("timer", xshift, yshift, zshift);
 
-            int fps = 1000 / gameTime.ElapsedGameTime.Milliseconds;
-            this.Window.Title = string.Format("LD27 (FPS: {0})", fps);
+            var xpixels = (engine.Camera.X/aspect)*screenw/2;
+            var ypixels = (-1 * engine.Camera.Y) * screenh / 2;
+            
+            worldMap.Viewport = new Vector2(worldMap.X + xpixels, worldMap.Y + ypixels);
+
+            // keep player  at the center of the screen.
+            worldMap.Player.Location = worldMap.Viewport;
+
 
         }
 
@@ -135,6 +154,9 @@ namespace LD27
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
+
+            int fps = 1000 / gameTime.ElapsedGameTime.Milliseconds;
+            this.Window.Title = string.Format("LD27 (FPS: {0})", fps);
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             engine.Draw(GraphicsDevice, gameTime);

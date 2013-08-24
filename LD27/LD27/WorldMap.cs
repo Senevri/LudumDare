@@ -1,5 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using Squared.Tiled;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,25 +11,58 @@ namespace LD27
 {
     class WorldMap
     {
+        public Vector2 Viewport { get; set; }
+        public List<Creature> Creatures { get; set; }        
+        public Creature Player { get; set; }
+
+        public List<SpawnPortal> Portals { get; set; }
+        public Dictionary<string, Rectangle[]> Locations { get; set; }
+        public float X { get; set; }
+        public float Y { get; set; }
+
         private Squared.Tiled.Map map;
         private RenderTarget2D renderTarget;
         private GraphicsDevice device;
+        private ContentManager content;
 
         public WorldMap(GraphicsDevice device, Microsoft.Xna.Framework.Content.ContentManager content) {
             this.device = device;
+            this.content = content;
+            var screenw = device.PresentationParameters.BackBufferWidth;
+            var screenh = device.PresentationParameters.BackBufferHeight;
+
             map = Squared.Tiled.Map.Load("Content\\WorldMap.tmx", content);
             renderTarget = new RenderTarget2D(
                 device,
-                device.PresentationParameters.BackBufferWidth,
-                device.PresentationParameters.BackBufferHeight,
+                screenw,
+                screenh,
                 //1024, 
                 //1024,
                 false,
                 device.PresentationParameters.BackBufferFormat,
                 DepthFormat.Depth24);
+
+            this.Creatures = new List<Creature>();
+
+            Player = new Creature() { Type = Creature.Types.PLAYER, Location = new Vector2(0, 0) };
+            Creatures.Add(Player);
+            foreach (var kvpair in map.ObjectGroups) {
+                ObjectGroup grp = kvpair.Value;
+                foreach (var objkvpair in grp.Objects) {
+                    var tiledobj = objkvpair.Value;
+                    if (tiledobj.Name.Equals("Start")) {
+                        Console.WriteLine("object: {0}, x {1} y {2} width {3} height {4}", tiledobj.Name, tiledobj.X, tiledobj.Y, tiledobj.Width, tiledobj.Height);
+                        Player.Location = new Vector2(tiledobj.X + tiledobj.Width/2, tiledobj.Y + tiledobj.Height/2);
+                    }
+                }
+            }
+            this.Viewport = new Vector2(Player.Location.X - (screenw / 2), Player.Location.Y - (screenh / 2));
+            X = this.Viewport.X;
+            Y = this.Viewport.Y;
+
         }
 
-        public RenderTarget2D GetMapImage() { 
+        public RenderTarget2D GetMapImage() {
             device.SetRenderTarget(renderTarget);
             //FIXME from tutorial, check if actually required.
             device.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
@@ -41,11 +76,14 @@ namespace LD27
             return renderTarget;
         }
 
-
-
-        public Vector2 Viewport { get; set; }
-        public List<Creature> Creatures { get; set; }
-        public List<SpawnPortal> Portals { get; set; }
-        public Dictionary<string, Rectangle[]> Locations { get; set; }
+        
+        internal void ResetMapTexture()
+        {
+            foreach (var ts in this.map.Tilesets.Values) {
+                ts.Texture = content.Load<Texture2D>(ts.Name);
+                Console.WriteLine("{0} : {1} {2}", ts.Name, ts.Texture.Width, ts.Texture.Height);
+                map.Tilesets[ts.Name].Texture = ts.Texture;
+            }
+        }
     }
 }

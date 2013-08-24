@@ -8,7 +8,7 @@ namespace LD27
 {
     class Creature
     {
-        public enum Types {SMALL, MEDIUM, LARGE, BEWARE}
+        public enum Types {CIVILIAN, PLAYER, SMALL, MEDIUM, LARGE, BEWARE}
         public Vector2 Location { get; set; }
         public Types Type { get; set; }
     }

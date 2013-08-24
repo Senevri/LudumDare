@@ -40,6 +40,7 @@
     <Compile Include="External\Tiled.cs" />
     <Compile Include="PositionedQuad.cs" />
     <Compile Include="SpawnPortal.cs" />
+    <Compile Include="SpriteSheet.cs" />
     <Compile Include="TenGame.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
