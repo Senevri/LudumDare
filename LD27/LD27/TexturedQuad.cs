@@ -21,7 +21,7 @@ namespace LD27
         }
 
         public TexturedQuad(float scale)
-        {
+        {            
             Scale = scale;
             GenerateVertices();
         }

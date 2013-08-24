@@ -79,9 +79,13 @@ namespace LD27
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            // TODO: Add your update logic here
-            engine.Update(gameTime);
+            // TODO: Add your update logic here            
             base.Update(gameTime);
+            engine.Update(gameTime);
+
+            int fps = 1000 / gameTime.ElapsedGameTime.Milliseconds;
+            this.Window.Title = string.Format("LD27 (FPS: {0})", fps);
+
         }
 
         /// <summary>
