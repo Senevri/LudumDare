@@ -103,10 +103,7 @@ namespace LD27
             Textures.Add("mapRender", WorldMap.GetMapImage());
             Textures.Add("playerspritesheet", Content.Load<Texture2D>("playerspritesheet"));
             Effect.Texture = Textures["mapRender"];
-            foreach (var texture in Textures) { 
-                //Textures[texture.Key].
-            }
-            // "1" = viewport height.
+
             float testScale = 64f / (screenh);
             defaultScale = testScale;
 
@@ -127,7 +124,17 @@ namespace LD27
             storedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, new Vector2(0.5f, 0.5f)));
             storedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(screenw - 32, screenh - 32)) { Rotation = new Vector3(0, 0, (float)(-Math.PI / 8)) });
             //storedQuads.Add(namedQuads["timer"]);
+
+            sprites.Add(new SpriteSheet(Textures["playerspritesheet"], 8, 64 ,64, aspect/10, 1/10));
+            sprites.Last().AnimationIndexes.Add("test", new int[]{0,1});
+            sprites.Last().AnimationIndexes.Add("test1", new int[]{9});
+            sprites.Last().Animation = "test";
+            sprites.Last().Position = WorldMap.Player.Location;
             
+            sprites.Last().First(GraphicsDevice);
+
+            namedQuads.Add("player", sprites.Last());
+            //storedQuads.AddRange(sprites);
         }
 
         internal Vector2 PixelPositionToVector2(int x, int y) {
@@ -150,7 +157,21 @@ namespace LD27
             List<VertexPositionNormalTexture> verts = new List<VertexPositionNormalTexture>();
 
 
-            
+            renderQuads.AddRange(sprites);
+
+            float seconds = (float)gameTime.TotalGameTime.TotalSeconds - prevSeconds;
+
+            namedQuads["timer"] = Write(string.Format("{0:0}", seconds), (screenw / 2) + (int)Math.Round(Camera.X * screenw / (2.0 * aspect)), 32 - (int)Math.Round(Camera.Y * screenh / 2.0), new Vector3(0, 0, 0), 0.1f);
+
+            renderQuads.Add(namedQuads["timer"]);
+            if (seconds > 10.9)
+            {
+                prevSeconds = (float)gameTime.TotalGameTime.TotalSeconds;
+            }
+            delta = gameTime.TotalGameTime.TotalSeconds;
+
+
+
             int i = 0;
             for (i=0; i<renderQuads.Count; i++) {
                 var quad = renderQuads[i];
@@ -175,18 +196,8 @@ namespace LD27
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             GraphicsDevice.SetVertexBuffer(vertexBuffer);
 
-            //CreateEffect();
-            float seconds = (float)gameTime.TotalGameTime.TotalSeconds - prevSeconds;
-
-            namedQuads["timer"] = Write(string.Format("{0:0}", seconds), (screenw / 2) + (int)Math.Round(Camera.X*screenw/(2.0*aspect)), 32 - (int)Math.Round(Camera.Y*screenh/2.0), new Vector3(0, 0, 0), 0.1f);
-            renderQuads.Add(namedQuads["timer"]);
-            if (seconds > 10.9)
-            {
-                prevSeconds = (float)gameTime.TotalGameTime.TotalSeconds;
-            }
-            delta = gameTime.TotalGameTime.TotalSeconds;
-
-
+            
+            
 
             SetupEffect(); 
             // foreach object in some list 
@@ -201,6 +212,10 @@ namespace LD27
                     GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, quad.Vertices, 0, 2);                    
                 }
                 //endforeach
+                var sheet = quad as SpriteSheet;
+                if (null != sheet && sheet.AllowNextFrame(gameTime.TotalGameTime.TotalSeconds)) {
+                    sheet.Next(sheet.Texture);
+                }
             }
 
         }
@@ -298,6 +313,8 @@ namespace LD27
             //}
             namedQuads["map"].Texture = WorldMap.GetMapImage();
             namedQuads["map"].Position = new Vector2(Camera.X, Camera.Y);
+            namedQuads["player"].Position = new Vector2(Camera.X, Camera.Y);
+            WorldMap.Player.Location = new Vector2(Camera.X,Camera.Y);
             //positionedQuads.Add(Write("this is a test", 400, 300, new Vector3(0, 0, 0), 0.8f));
             //positionedQuads.Add(Write(string.Format("{0:0}", seconds), screenw/2, 32, new Vector3(0, 0, 0), 0.1f));
             //Effect.Texture = null;

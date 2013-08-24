@@ -46,6 +46,7 @@ namespace LD27
 
             Player = new Creature() { Type = Creature.Types.PLAYER, Location = new Vector2(0, 0) };
             Creatures.Add(Player);
+            Random random = new Random();
             foreach (var kvpair in map.ObjectGroups) {
                 ObjectGroup grp = kvpair.Value;
                 foreach (var objkvpair in grp.Objects) {
@@ -54,13 +55,30 @@ namespace LD27
                         Console.WriteLine("object: {0}, x {1} y {2} width {3} height {4}", tiledobj.Name, tiledobj.X, tiledobj.Y, tiledobj.Width, tiledobj.Height);
                         Player.Location = new Vector2(tiledobj.X + tiledobj.Width/2, tiledobj.Y + tiledobj.Height/2);
                     }
+                    else if (tiledobj.Name.Equals("SpawnPortal")) {
+                        Portals.Add(new SpawnPortal() { CreatureTypes = new Creature.Types[]{Creature.Types.SMALL, Creature.Types.MEDIUM}, Location = new Vector2(tiledobj.X + tiledobj.Width/2, tiledobj.Y + tiledobj.Height/2), Size = random.Next(1, 100) });                    
+                    }
+                    else if (tiledobj.Name.Equals("Location")) { 
+                        if (tiledobj.Properties.ContainsKey("LocationType")) {
+                            // TODO: do something.
+                        }
+                    }
                 }
             }
+
             this.Viewport = new Vector2(Player.Location.X - (screenw / 2), Player.Location.Y - (screenh / 2));
             X = this.Viewport.X;
             Y = this.Viewport.Y;
 
         }
+
+        public void Update(float time) {
+            if (time >= 10) { 
+                // each open portal spawns creatures.
+            }
+        
+        }
+
 
         public RenderTarget2D GetMapImage() {
             device.SetRenderTarget(renderTarget);
@@ -71,7 +89,7 @@ namespace LD27
             batch.Begin();
             map.Draw(batch, new Rectangle(0,0,800,480), Viewport);
             batch.End();
-            //batch.Dispose();
+            batch.Dispose();
             device.SetRenderTarget(null);
             return renderTarget;
         }

@@ -56,7 +56,7 @@ namespace LD27
             this.tileCount = columns * rows;
             this.Initialize();
             this.Delay = 0.5f;
-            this.Rescale(this.tileHeight/480);
+            //this.Rescale(this.tileHeight/480);
          
         }
 
