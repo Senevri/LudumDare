@@ -25,6 +25,9 @@ namespace LD27
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+
+            graphics.PreferredBackBufferWidth = 800;
+            graphics.PreferredBackBufferHeight = 480;
         }
 
         /// <summary>
@@ -89,7 +92,7 @@ namespace LD27
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            engine.Draw(gameTime);
+            engine.Draw(GraphicsDevice, gameTime);
 
             base.Draw(gameTime);
         }

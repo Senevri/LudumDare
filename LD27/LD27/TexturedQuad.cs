@@ -13,7 +13,28 @@ namespace LD27
 
         public Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] Vertices { get; set; }
 
+        public float Scale { get; set; }
+
         public TexturedQuad() {
+            Scale = 1f;
+            GenerateVertices();
+        }
+
+        public TexturedQuad(float scale)
+        {
+            Scale = scale;
+            GenerateVertices();
+        }
+
+        private Vector3 normal = Vector3.Backward;
+
+        public TexturedQuad Rescale(float scale) {
+            GenerateVertices();
+            return this;
+        }
+
+        private void GenerateVertices()
+        {
             Vertices = new VertexPositionNormalTexture[6];
             Vertices[0] = genVertice(-1.0f, 1.0f, 0, 0.0f, 0.0f);
             Vertices[1] = genVertice(1.0f, 1.0f, 0, 1.0f, 0.0f);
@@ -23,10 +44,9 @@ namespace LD27
             Vertices[4] = genVertice(1.0f, 1.0f, 0, 1.0f, 0.0f);
             Vertices[5] = genVertice(1.0f, -1.0f, 0, 1.0f, 1.0f);
         }
-        private Vector3 normal = Vector3.Backward;
 
         private VertexPositionNormalTexture genVertice(float x, float y, float z, float tx, float ty) {
-            return new VertexPositionNormalTexture(new Vector3(x, y, z), normal, new Vector2(tx, ty));
+            return new VertexPositionNormalTexture(new Vector3(x*Scale, y*Scale, z*Scale), normal, new Vector2(tx, ty));
         }
     }
 }
