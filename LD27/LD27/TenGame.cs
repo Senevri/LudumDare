@@ -138,9 +138,9 @@ namespace LD27
             //engine.MoveQuad("timer", xshift, yshift, zshift);
 
             var xpixels = (engine.Camera.X/aspect)*screenw/2;
-            var ypixels = (-1 * engine.Camera.Y) * screenh / 2;
+            var ypixels = (engine.Camera.Y) * screenh / 2;
             
-            worldMap.Viewport = new Vector2(worldMap.X + xpixels, worldMap.Y + ypixels);
+            worldMap.Viewport = new Vector2(worldMap.X + xpixels, worldMap.Y - ypixels);
 
             // keep player  at the center of the screen.
             worldMap.Player.Location = worldMap.Viewport;

@@ -708,7 +708,7 @@ namespace Squared.Tiled {
         public static Map Load (string filename, ContentManager content) {
             var result = new Map();
                 XmlReaderSettings settings = new XmlReaderSettings();
-                settings.ProhibitDtd = false;
+                settings.DtdProcessing = DtdProcessing.Prohibit;
 
                 using (var stream = System.IO.File.OpenText(filename))
                 using (var reader = XmlReader.Create(stream, settings))

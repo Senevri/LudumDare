@@ -13,7 +13,7 @@ namespace LD27
         public Vector3 Rotation { get; set; }
         //public Microsoft.Xna.Framework.Graphics.Texture2D Texture { get; set; }
         private VertexPositionNormalTexture[] _vertices;
-        public Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] Vertices {
+        public new Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] Vertices {
             get {
                 VertexPositionNormalTexture[] outVerts = new VertexPositionNormalTexture[6];
                 for (int i = 0; i<_vertices.Length; i++) {                    
