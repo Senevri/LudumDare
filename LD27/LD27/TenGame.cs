@@ -19,6 +19,7 @@ namespace LD27
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         Engine engine;
+        WorldMap worldMap;
 
         public TenGame()
             : base()
@@ -53,7 +54,9 @@ namespace LD27
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            engine = new Engine(GraphicsDevice, Content);
+            worldMap = new WorldMap(GraphicsDevice, Content);
+
+            engine = new Engine(GraphicsDevice, Content) { WorldMap = worldMap};
             engine.LoadContent();
 
            
@@ -78,7 +81,45 @@ namespace LD27
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+            KeyboardState kbdState = Keyboard.GetState();
 
+            float xshift = 0;
+            float yshift = 0;
+            float zshift = 0;
+            if (kbdState.IsKeyDown(Keys.Up)) {
+                yshift -= 0.1f;
+            }
+
+            if (kbdState.IsKeyDown(Keys.Down))
+            {
+                yshift += 0.1f;
+            }
+            if (kbdState.IsKeyDown(Keys.Left))
+            {
+                xshift -= 0.1f;
+            }
+
+            if (kbdState.IsKeyDown(Keys.Right))
+            {
+                xshift += 0.1f;
+            }
+
+
+            if (kbdState.IsKeyDown(Keys.PageUp))
+            {
+                zshift -= 0.05f;
+            }
+
+            if (kbdState.IsKeyDown(Keys.PageDown))
+            {
+                zshift += 0.05f;
+            }
+
+
+            //worldMap.Viewport = new Vector2(worldMap.Viewport.X + xshift, worldMap.Viewport.Y + yshift);
+
+            engine.Camera = new Vector3(engine.Camera.X + xshift, engine.Camera.Y + yshift, engine.Camera.Z + zshift);
+            engine.Target = new Vector3(engine.Target.X + xshift, engine.Target.Y + yshift, -1);
             // TODO: Add your update logic here            
             base.Update(gameTime);
             engine.Update(gameTime);

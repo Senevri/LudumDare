@@ -26,6 +26,8 @@ namespace LD27
 
         public BasicEffect Effect { get; set; }
 
+        public WorldMap WorldMap { get; set; }
+
         public Engine(Microsoft.Xna.Framework.Graphics.GraphicsDevice GraphicsDevice)
         {
             // TODO: Complete member initialization
@@ -71,26 +73,17 @@ namespace LD27
             int screenh = GraphicsDevice.Viewport.Bounds.Height;
             Textures.Add("test", Content.Load<Texture2D>("testTexture"));
             Textures.Add("bmpFont", Content.Load<Texture2D>("bmpFont"));
+            Textures.Add("mapRender", new Texture2D(GraphicsDevice, screenw, screenh));
+            Color[] mapdata = new Color[screenw * screenh];
+            WorldMap.GetMapImage().GetData<Color>(mapdata);
+            Textures["mapRender"].SetData<Color>(mapdata);
+
             foreach (var texture in Textures) { 
                 //Textures[texture.Key].
             }
             // "1" = viewport height.
             float testScale = 64f / (screenh);
             defaultScale = testScale;
-
-            positionedQuads.Add(new PositionedQuad(new TexturedQuad(testScale) { Texture = Textures["test"] }, PixelPositionToVector2(32, 32)));
-            positionedQuads.Add(new PositionedQuad(new TexturedQuad(testScale) { Texture = Textures["test"] }, PixelPositionToVector2(96, 32)));
-            positionedQuads.Add(new PositionedQuad(new TexturedQuad(testScale) { Texture = Textures["test"] }, PixelPositionToVector2(160, 32)));
-            positionedQuads.Add(new PositionedQuad(new TexturedQuad(testScale) { Texture = Textures["test"] }, PixelPositionToVector2(224, 32)));
-            positionedQuads.Add(new PositionedQuad(new TexturedQuad(testScale) { Texture = Textures["test"] }, PixelPositionToVector2(288, 32)) { Rotation = new Vector3(0, 0, (float)(Math.PI / 4)) });
-            positionedQuads.Add(new PositionedQuad(new TexturedQuad(testScale) { Texture = Textures["test"] }, new Vector2(0.5f, 0)) { Rotation = new Vector3(0, 0, (float)(-Math.PI / 4)) });
-            positionedQuads.Add(new PositionedQuad(new TexturedQuad(testScale) { Texture = Textures["test"] }, new Vector2(0.5f, 0.5f)));
-            positionedQuads.Add(new PositionedQuad(new TexturedQuad(testScale) { Texture = Textures["test"] }, PixelPositionToVector2(screenw - 32, screenh - 32)) { Rotation = new Vector3(0, 0, (float)(-Math.PI / 8)) });
-            //positionedQuads.Add(Write("this is a test", 400, 300, new Vector3(0, 0, 0)));
-            positionedQuads.Add(Write("0123456789", 200, 300, new Vector3(0, 0, 0)));
-            //positionedQuads[3].Rotation = new Vector3((float)(25 * Math.PI / 180), 0, 0);
-
-            vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, this.positionedQuads.Count * 6, BufferUsage.WriteOnly);
             
         }
 
@@ -104,7 +97,7 @@ namespace LD27
 
         }
 
-       
+        float newAngle = 0;
 
         internal void Draw(GraphicsDevice GraphicsDevice, Microsoft.Xna.Framework.GameTime gameTime)
         {
@@ -116,13 +109,15 @@ namespace LD27
             int i = 0;
             for (i=0; i<positionedQuads.Count; i++) {
                 var quad = positionedQuads[i];
-               /* float newAngle = (float)(quad.Rotation.Y + Math.PI / 180);
-                if (quad.Rotation.Y >= Math.PI * 2)
+                newAngle = (float)(newAngle + (Math.PI / (180 * 4)));
+                if (newAngle >= Math.PI * 2)
                 {
                     newAngle = 0;
                 }
-                positionedQuads[i].Rotation = new Vector3(0, newAngle, 0);              
-                */
+                if (i == 1)
+                {
+                    positionedQuads[i].Rotation = new Vector3(0, newAngle, 0);
+                }
                 verts.AddRange(quad.Vertices);
             }
 
@@ -150,13 +145,13 @@ namespace LD27
 
         }
 
-        internal PositionedQuad Write(string text, int screenx, int screeny, Vector3 rotation) {
+        internal PositionedQuad Write(string text, int screenx, int screeny, Vector3 rotation, float scale = 1) {
             Texture2D tex = Textures["bmpFont"];
             int columns = 8;
             int pixelwidth = 64;
             Color[] data = new Color[tex.Width * tex.Height];
             //useless padding.
-            Color[] letters = new Color[(64*text.Length)*512];
+            Color[] letters = new Color[(64*text.Length)*64];
             tex.GetData<Color>(data);
             int letterindex = 0;
             foreach (char letter in text.ToLower())
@@ -164,15 +159,19 @@ namespace LD27
                 int gid = 0;
                 if (Char.IsNumber(letter))
                 {
-                    gid = 30 + (int)Char.GetNumericValue(letter);
+                    gid = 31 + (int)Char.GetNumericValue(letter);
                 }
                 else if (letter >= 'a')
                 {
                     gid = letter - 'a';
                 }
-                else
+                else if (letter.Equals(' '))
                 {
-                    gid = 29;
+                    gid = 63;
+                }
+                else 
+                { //period
+                    gid = 30;
                 }
 
                 int xmod = (gid % columns) * pixelwidth;
@@ -191,10 +190,10 @@ namespace LD27
                 letterindex++;             
             }
 
-            Texture2D texture = new Texture2D(GraphicsDevice, 64*text.Length, 512);
+            Texture2D texture = new Texture2D(GraphicsDevice, 64*text.Length, 64);
             texture.SetData<Color>(letters);
 
-            PositionedQuad pq = new PositionedQuad(new TexturedQuad(0.8f) { 
+            PositionedQuad pq = new PositionedQuad(new TexturedQuad(scale, scale/text.Length) { 
                 Texture = texture}, 
                 PixelPositionToVector2(screenx, screeny));
             return pq;
@@ -210,12 +209,48 @@ namespace LD27
             Effect.TextureEnabled = true;
         }
 
+        float prevSeconds = 0;
         internal void Update(GameTime gameTime)
         {
             this.viewMatrix = Matrix.CreateLookAt(Camera, Target, Vector3.Up);
             this.worldMatrix = Matrix.CreateWorld(Vector3.Backward, Vector3.Forward, Vector3.Up);
             //this.projectionMatrix = Matrix.CreatePerspective(GraphicsDevice.Viewport.AspectRatio, 1.0f, 0.5f, 100.0f);
             this.projectionMatrix = Matrix.CreateOrthographic(2f*GraphicsDevice.Viewport.AspectRatio, 2f, 0.1f, 100f);
+
+            var aspect = GraphicsDevice.Viewport.AspectRatio;
+            int screenw = GraphicsDevice.Viewport.Bounds.Width;
+            int screenh = GraphicsDevice.Viewport.Bounds.Height;
+            float seconds = (float)gameTime.TotalGameTime.TotalSeconds - prevSeconds;
+            
+
+            positionedQuads.Clear();
+            /*
+            positionedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(32, 32)));
+            positionedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(96, 32)));
+            positionedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(160, 32)));
+            positionedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(224, 32)));
+            positionedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(288, 32)) { Rotation = new Vector3(0, 0, (float)(Math.PI / 4)) });
+            positionedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, new Vector2(0.5f, 0)) { Rotation = new Vector3(0, 0, (float)(-Math.PI / 4)) });
+            positionedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, new Vector2(0.5f, 0.5f)));
+            positionedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(screenw - 32, screenh - 32)) { Rotation = new Vector3(0, 0, (float)(-Math.PI / 8)) });
+             * */
+            Color[] mapdata = new Color[screenw * screenh];
+            //WorldMap.GetMapImage().GetData<Color>(mapdata);
+            //Textures["mapRender"].SetData<Color>(mapdata);
+            var maptexture = Textures["mapRender"];
+            positionedQuads.Add(new PositionedQuad(new TexturedQuad(aspect, 1) { Texture = maptexture }, PixelPositionToVector2(maptexture.Width/2, maptexture.Height/2)));
+            positionedQuads.Add(Write("this is a test", 400, 300, new Vector3(0, 0, 0), 0.8f));
+            positionedQuads.Add(Write(string.Format("{0:0}", seconds), screenw/2, 32, new Vector3(0, 0, 0), 0.1f));
+            //positionedQuads[3].Rotation = new Vector3((float)(25 * Math.PI / 180), 0, 0);
+
+            if (seconds > 10.9)
+            {
+                prevSeconds = (float)gameTime.TotalGameTime.TotalSeconds;
+            }
+
+            vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, this.positionedQuads.Count * 6, BufferUsage.WriteOnly);
+            
+
         }
         
     }
