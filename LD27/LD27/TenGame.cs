@@ -14,12 +14,13 @@ namespace LD27
     /// <summary>
     /// This is the main type for your game
     /// </summary>
-    public class Game1 : Game
+    public class TenGame : Game
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        Engine engine;
 
-        public Game1()
+        public TenGame()
             : base()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -37,6 +38,7 @@ namespace LD27
             // TODO: Add your initialization logic here
 
             base.Initialize();
+            
         }
 
         /// <summary>
@@ -48,6 +50,10 @@ namespace LD27
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
+            engine = new Engine(GraphicsDevice, Content);
+            engine.LoadContent();
+
+           
             // TODO: use this.Content to load your game content here
         }
 
@@ -71,7 +77,7 @@ namespace LD27
                 Exit();
 
             // TODO: Add your update logic here
-
+            engine.Update(gameTime);
             base.Update(gameTime);
         }
 
@@ -83,7 +89,7 @@ namespace LD27
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            // TODO: Add your drawing code here
+            engine.Draw(gameTime);
 
             base.Draw(gameTime);
         }
