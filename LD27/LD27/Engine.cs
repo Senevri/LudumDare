@@ -132,13 +132,22 @@ namespace LD27
 
             namedQuads.Add("player", AddSpriteSheet(Textures["playerspritesheet"], WorldMap.Player.Location));
             namedQuads.Add("tiles", AddSpriteSheet(Textures["tilesheet"], Vector2.Zero, false, false));
-            namedQuads.Add("enemies", AddSpriteSheet(Textures["youmaspritesheet"], Vector2.Zero, false, false));
-            namedQuads.Add("timer", AddSpriteSheet(Textures["bmpFont"], PixelPositionToVector2(screenw / 2, 32)));
+
+            var enemies = AddSpriteSheet(Textures["youmaspritesheet"], Vector2.Zero, false, false);
+            enemies.Delay = 0.5f;
+            enemies.AnimationIndexes.Add("idle", new int[] {0,1});
+            enemies.Animation = "idle";
+
+
+            namedQuads.Add("enemies", enemies);
+
+            var timer = AddSpriteSheet(Textures["bmpFont"], PixelPositionToVector2(screenw / 2, 32));
+            namedQuads.Add("timer", timer);
 
             // TODO: animation generator
             // set texture to first frame;
             //timer.First(GraphicsDevice);
-            var timer = (namedQuads["timer"] as SpriteSheet);
+            
             timer.Current = 42;
             timer.SetTileToCurrent(GraphicsDevice);            
             timer.AnimationIndexes["timer"] = Enumerable.Range(32, 10).ToArray();
@@ -156,6 +165,7 @@ namespace LD27
             //spritesheet is by default a 8x8 grid, so.... 
             // 
             sprites.Add(new SpriteSheet(texture, 8, 64, 64, aspect/12.5f, 1/8f) { Show = show });
+            sprites.Last().Texture = null;
             sprites.Last().isAnimated = animated;
             sprites.Last().AnimationIndexes.Add("test", new int[] { 0, 1 });
             sprites.Last().AnimationIndexes.Add("test1", new int[] { 9 });
@@ -189,15 +199,9 @@ namespace LD27
 
             renderQuads.AddRange(sprites);
 
-            float seconds = (float)gameTime.TotalGameTime.TotalSeconds - prevSeconds;
+            float seconds = (float)gameTime.TotalGameTime.TotalSeconds - prevSeconds;            
 
-            namedQuads["timer"].Position = new Vector2 (
-                 Camera.X,
-                 Camera.Y + 0.8f
-            );
-        
-
-            renderQuads.Add((namedQuads["timer"] as SpriteSheet));
+            //renderQuads.Add((namedQuads["timer"] as SpriteSheet));
 
             if (seconds > 10.9)
             {
@@ -208,6 +212,7 @@ namespace LD27
             var tiles = (namedQuads["tiles"] as SpriteSheet);
             tiles.Current = 8;
             tiles.SetTileToCurrent(GraphicsDevice);
+            
             // get correct tile
             
             foreach (var portal in WorldMap.Portals) {
@@ -219,8 +224,17 @@ namespace LD27
                 }
             }
             var enemies = (namedQuads["enemies"] as SpriteSheet);
-            enemies.Current = 0;
-            enemies.SetTileToCurrent(GraphicsDevice);
+            //enemies.Current = 0;
+            //enemies.SetTileToCurrent(GraphicsDevice);
+            enemies.isAnimated = true;
+            if (enemies.AllowNextFrame(gameTime.TotalGameTime.TotalSeconds))
+            {
+                enemies.Next(enemies.Texture);
+            }
+            else {
+                enemies.SetTileToCurrent(GraphicsDevice);
+            }
+
             foreach (var enemy in WorldMap.Creatures) {
                 var v1 = PixelPositionToVector2((int)(enemy.Location.X - WorldMap.X), (int)(enemy.Location.Y - WorldMap.Y));
                 switch (enemy.Type) { 
@@ -272,11 +286,12 @@ namespace LD27
                         GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, quad.Vertices, 0, 2);
                     }
                     //endforeach
+                    
                     var sheet = quad as SpriteSheet;
                     if (null != sheet && sheet.AllowNextFrame(gameTime.TotalGameTime.TotalSeconds))
                     {
                         sheet.Next(sheet.Texture);
-                    }
+                    }                    
                 }
             }
 
@@ -380,6 +395,8 @@ namespace LD27
             namedQuads["map"].Texture = WorldMap.GetMapImage();
             namedQuads["map"].Position = new Vector2(Camera.X, Camera.Y);
             namedQuads["player"].Position = new Vector2(Camera.X, Camera.Y);
+            namedQuads["timer"].Position = new Vector2(Camera.X, Camera.Y + 0.8f);
+        
             WorldMap.Player.Location = new Vector2(Camera.X,Camera.Y);
             //positionedQuads.Add(Write("this is a test", 400, 300, new Vector3(0, 0, 0), 0.8f));
             //positionedQuads.Add(Write(string.Format("{0:0}", seconds), screenw/2, 32, new Vector3(0, 0, 0), 0.1f));

@@ -21,6 +21,7 @@ namespace LD27
         public int Range { get; set; }
         public float Speed { get; set; }
         public double Direction { get; set; }
+        private Dictionary<string, float> _properties;
 
 
         public delegate void AIScriptCallback(Creature creature, WorldMap worldMap, double random);
@@ -31,7 +32,30 @@ namespace LD27
 
         public Creature() {
             this.Speed = 1f;
+            this._properties = new Dictionary<string, float>();
         }
+
+        public bool Is(string s) {
+            return (this._properties.ContainsKey(s) && this._properties[s] > 0);
+        }
+
+        public float Set(string s, float f) {
+            var f_old = 0f;
+            if (this._properties.ContainsKey(s)) { 
+                f_old =  this._properties[s];
+            }
+            this._properties[s] = f;
+            return f_old;
+        }
+
+        public float? Get(string s) {
+            if (this._properties.ContainsKey(s))
+            {
+                return this._properties[s];
+            }
+            return null;
+        }
+         
 
 
         public bool Move(Vector2 locationShift, WorldMap worldMap) {

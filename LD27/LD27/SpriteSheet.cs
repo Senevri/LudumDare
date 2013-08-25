@@ -23,6 +23,20 @@ namespace LD27
 
         private double lastFrameShown;
 
+        private Texture2D _texture;
+        /*public Texture2D Texture { 
+            get {                
+                //_spriteSheet = base.Texture;
+                //hmhmhm                
+                _texture.SetData<Color>(GetRectColors(GetRectFromIndex(Current)));
+                return _texture;
+            } 
+            set {
+                _texture = value;
+            } 
+        
+        }*/
+
         public string Animation { get { return _currentAnimation; } set { _currentAnimation = value; } }
 
         public Dictionary<string, int[]> AnimationIndexes;
@@ -34,10 +48,11 @@ namespace LD27
         }
 
         public SpriteSheet(Texture2D texture, float Scale, float ScaleY, Vector2 Location) : base(new TexturedQuad(Scale, ScaleY), Location) {
+            this.Initialize();         
             this._spriteSheet = texture;
-            this.Texture = texture;
-            this.columns = 1;
-            this.rows = 1;
+            //this.Texture = texture;
+            this.columns = 8;
+            this.rows = 8;
             if (null != texture)
             {
                 this.tileWidth = texture.Width;
@@ -45,10 +60,11 @@ namespace LD27
             }
             this.tileCount = 1;
             
-            this.Initialize();         
+            
         }
 
         public SpriteSheet(Texture2D texture, int columns = 8, int tilewidth = 64, int tileheight = 64, float scale=0.1f, float scaley=0.1f) : base(new TexturedQuad(scale, scaley), new Vector2()) {
+            this.Initialize();
             this.Show = true;
             this._spriteSheet = texture;
             this.tileHeight = tileheight;
@@ -56,7 +72,7 @@ namespace LD27
             this.columns = columns;
             this.rows = texture.Height/tileHeight;
             this.tileCount = columns * rows;
-            this.Initialize();
+            
             this.Delay = 0.5f;
             this.Scale = tilewidth*1.666f / 800f;
             this.ScaleY = tileheight / 480;
@@ -69,6 +85,7 @@ namespace LD27
         public SpriteSheet(SpriteSheet sheet) : base(sheet, sheet.Position)
         {
             //// TODO: Complete member initialization
+            this.Initialize();
             this.tileHeight = sheet.tileHeight;
             this.tileWidth = sheet.tileWidth;
             this.columns = sheet.columns;
@@ -135,7 +152,7 @@ namespace LD27
         public Texture2D Next(Texture2D prev)
         {
             if (tileCount <= 1) {
-                return Texture;
+                return prev;
             }
             List<int> allowedList = new List<int>();
             if (!this._currentAnimation.Equals(String.Empty))
@@ -169,12 +186,13 @@ namespace LD27
 
         private void Initialize() {
             this.Current = 0;
-            this.rows = 0;
+            this.rows = 1; // always 1 row
+            this.columns = 1;
             this.AnimationIndexes = new Dictionary<string, int[]>();
+            this.tileCount = 64;
         }
 
-        private void DefaultAnimationIndexing() {
-            ;
+        private void DefaultAnimationIndexing() {            
             for (var y=0 ; y<this.rows; y++) {
                 List<int> frames = new List<int>();
                 for (var x=0 ; x<this.columns; x++) {
