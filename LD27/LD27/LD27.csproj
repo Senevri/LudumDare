@@ -38,6 +38,7 @@
     <Compile Include="Creature.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="External\Tiled.cs" />
+    <Compile Include="Force.cs" />
     <Compile Include="PositionedQuad.cs" />
     <Compile Include="SpawnPortal.cs" />
     <Compile Include="SpriteSheet.cs" />
@@ -74,7 +75,16 @@
     <Content Include="Content\bmpFont.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\endscreen_bad.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\misctiles.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Content\playerspritesheet.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\specialeffects.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\testTexture.png">

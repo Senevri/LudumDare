@@ -10,6 +10,8 @@ namespace LD27
     class SpriteSheet : PositionedQuad    
     {
         private Texture2D _spriteSheet;
+        private GraphicsDevice device;
+        private RenderTarget2D renderTarget; // see if we can clone easily.
         public int Current {get; set;}
         private int tileWidth;
         private int tileHeight;
@@ -63,7 +65,16 @@ namespace LD27
             
         }
 
-        public SpriteSheet(Texture2D texture, int columns = 8, int tilewidth = 64, int tileheight = 64, float scale=0.1f, float scaley=0.1f) : base(new TexturedQuad(scale, scaley), new Vector2()) {
+        public SpriteSheet(Texture2D texture, 
+            GraphicsDevice Device,
+            int columns = 8, 
+            int tilewidth = 64, 
+            int tileheight = 64, 
+            float scale=0.1f, 
+            float scaley=0.1f
+            ) : base(new TexturedQuad(scale, scaley), new Vector2()) 
+        {
+            this.device = Device;
             this.Initialize();
             this.Show = true;
             this._spriteSheet = texture;
@@ -134,6 +145,7 @@ namespace LD27
         }
 
         public Texture2D First(GraphicsDevice device) {
+            this.device = device;
             Texture2D tex = new Texture2D(device, tileWidth, tileHeight);
             tex.SetData<Color>(GetRectColors(GetRectFromIndex(0)));
             this.Texture = tex;
@@ -143,6 +155,7 @@ namespace LD27
 
         public void SetTileToCurrent(GraphicsDevice device) {
             //var pq = (this as PositionedQuad);
+            this.device = device;
             Texture2D currentTile = new Texture2D(device, this.tileWidth, this.tileHeight);
             currentTile.SetData<Color>(GetRectColors(GetRectFromIndex(Current)));
             this.Texture = currentTile;
@@ -190,6 +203,12 @@ namespace LD27
             this.columns = 1;
             this.AnimationIndexes = new Dictionary<string, int[]>();
             this.tileCount = 64;
+            
+            PresentationParameters pp = device.PresentationParameters;
+            renderTarget = new RenderTarget2D(device, 
+                64, //pp.BackBufferWidth, 
+                64, //pp.BackBufferHeight, 
+                true, device.DisplayMode.Format, DepthFormat.Depth24);
         }
 
         private void DefaultAnimationIndexing() {            
@@ -223,6 +242,21 @@ namespace LD27
         }
 
         public bool isAnimated { get; set; }
+
+        internal RenderTarget2D GetTextureCopy()
+        {
+            this.device.SetRenderTarget(renderTarget);
+            //FIXME from tutorial, check if actually required.
+            this.device.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
+            this.device.Clear(Color.DarkGray);
+            SpriteBatch batch = new SpriteBatch(this.device);
+            batch.Begin();
+            batch.Draw(this.Texture, new Rectangle(0, 0, this.Texture.Width, this.Texture.Height), new Rectangle(0, 0, this.Texture.Width, this.Texture.Height), Color.White);
+            batch.End();
+            batch.Dispose();
+            this.device.SetRenderTarget(null);
+            return renderTarget;
+        }
     }
 
 }

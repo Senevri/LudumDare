@@ -17,8 +17,11 @@ namespace LD27
 
         public List<SpawnPortal> Portals { get; set; }
         public Dictionary<string, Rectangle[]> Locations { get; set; }
+        public List<Force> Forces { get; set; } 
         public float X { get; set; }
         public float Y { get; set; }
+        public int TerrorLevel { get; set; }
+        public bool Disaster { get; set; }
 
         private Squared.Tiled.Map map;
         private RenderTarget2D renderTarget;
@@ -27,7 +30,8 @@ namespace LD27
         private double previousUpdateTotalSeconds;
         private int screenw;
         private int screenh;
-
+        private int totalKills = 0;
+        public bool EndGame { get; set; }
 
 
         public WorldMap(GraphicsDevice device, Microsoft.Xna.Framework.Content.ContentManager content) {
@@ -35,6 +39,7 @@ namespace LD27
             this.content = content;
             screenw = device.PresentationParameters.BackBufferWidth;
             screenh = device.PresentationParameters.BackBufferHeight;
+            EndGame = false;
             Portals = new List<SpawnPortal>();
 
             map = Squared.Tiled.Map.Load("Content\\WorldMap.tmx", content);
@@ -49,9 +54,19 @@ namespace LD27
                 DepthFormat.Depth24);
 
             this.Creatures = new List<Creature>();
+            this.Forces = new List<Force>();
 
-            Player = new Creature() { Type = Creature.Types.PLAYER, Location = new Vector2(0, 0) };
-            //Creatures.Add(Player);
+            Player = new Creature() { 
+                Type = Creature.Types.PLAYER, 
+                Location = new Vector2(0, 0), 
+                Health = 100, 
+                Attack = 10, 
+                ID = 9999, 
+                Range  =32, 
+                Speed = 7                
+            };
+            //Player.AIScript = Creature.CreateAttackIfInRange;
+            Creatures.Add(Player);            
             Random random = new Random();
             foreach (var grp in map.ObjectGroups) {
                 //ObjectGroup grp = kvpair.Value;
@@ -70,7 +85,10 @@ namespace LD27
                     }
                     else if (tiledobj.Name.Equals("Location")) { 
                         if (tiledobj.Properties.ContainsKey("LocationType")) {
-                            // TODO: do something.
+                            Locations.Add(new Location() { 
+                                X = tiledobj.X + tiledobj.Width/2, Y=tiledobj.Y+tiledobj.Height/2
+                            
+                            };
                         }
                     }
                 }
@@ -89,10 +107,15 @@ namespace LD27
             if (previousUpdateTotalSeconds == 0) { previousUpdateTotalSeconds = gameTime.TotalGameTime.TotalSeconds; }
             Random random = new Random();
             double timeDelta = gameTime.TotalGameTime.TotalSeconds - previousUpdateTotalSeconds;
-            if (time >= 10 && timeDelta > 0.025) { 
-                // each open portal spawns creatures.
-                time = 0;
-                
+            if ((time >= 10) && timeDelta > 0.030) {
+                this.Disaster = false;                
+                TerrorLevel += Creatures.Count;
+                // each open portal spawns creatures.                
+                Console.WriteLine("Time: {2}, Player Kills: {0} | Terrorlevel: {1}", Player.Kills, TerrorLevel, time);
+                //spawn cards
+                totalKills += Player.Kills;
+                Player.Kills = 0;
+
                 int openingPortalIndex = random.Next(0, this.Portals.Count-1);
                 this.Portals[openingPortalIndex].isOpen = true;
                 var p = this.Portals[openingPortalIndex];
@@ -116,38 +139,55 @@ namespace LD27
                 }
 
                 foreach (var portal in this.Portals) {
-                    if (portal.isOpen)
-                    {
-                        Creatures.AddRange(portal.SpawnCreatures());
+                    if (portal.isOpen) {
+                        TerrorLevel += 1;
+                        if (Creatures.Count < 20)
+                        {
+                            Creatures.AddRange(portal.SpawnCreatures(Creatures.Count, TerrorLevel));
 
+                        } else {
+                            portal.Size += 0.1f;
+                        }
                     }
                 }
             }
             if (timeDelta > 0.025) {//40fps 
                 foreach (var creature in this.Creatures) {
-                    if (creature.Type != Creature.Types.CIVILIAN) { 
+                    if (creature.Type != Creature.Types.CIVILIAN && creature.Type != Creature.Types.PLAYER) { 
                         //move creature; pause just before deadline
-                        if (time < 9.5) {
-                            if (!creature.Move(creature.Direction, creature.Speed, this)) {
-                                creature.Direction = creature.Direction + (random.Next(0,2) -1) * Math.PI / 8;
-
-                                // no multiple loops in circle
-                                if (creature.Direction > Math.PI * 2) {
-                                    creature.Direction = 0;
-                                }
-                                else if (creature.Direction < 0) {
-                                    creature.Direction += 2 * Math.PI;
-                                }
-                            }
+                        if (time < 9.5||this.Disaster) {                            
+                            creature.Set("changingDirections");                            
                         }
-                    }
+                    } 
                     if (creature.AIScript != null) {
+                        if (creature.Type == Creature.Types.PLAYER) {
+                            Console.WriteLine("playerscript");
+                        }
                         creature.AIScript(creature, this, (random.Next(0, 100)/100.0));
                     }
                 }
+                foreach (var force in this.Forces.Where((f) => (!f.IsApplied))) {
+                    force.Apply();                    
+                }
+
+                this.Forces = this.Forces.Where((f) => (!f.Remove)).ToList();
+                this.Creatures = this.Creatures.Where((c) => (c.Health > 0)).ToList();
+                this.Portals = this.Portals.Where((p) => (!p.Destroyed)).ToList();
+
                 previousUpdateTotalSeconds = gameTime.TotalGameTime.TotalSeconds;
-            }            
+            }
+            if (TerrorLevel == 100) {
+                System.Diagnostics.Debugger.Break();
+            }
+            if (totalKills == 100) {
+                EndGame = true;
+            }
+
+            time = 0;
+            this.Disaster = false;
         }
+
+        
 
 
         public RenderTarget2D GetMapImage() {
@@ -224,5 +264,7 @@ namespace LD27
                 );
             return Out;
         }
+
+        
     }
 }

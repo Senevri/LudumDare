@@ -21,6 +21,8 @@ namespace LD27
         Engine engine;
         WorldMap worldMap;
         private static GraphicsDevice _graphicsDevice;
+        Texture2D flatTextures;
+        Dictionary<string, Texture2D> Textures;
 
         public TenGame()
             : base()
@@ -61,12 +63,16 @@ namespace LD27
         protected override void LoadContent()
         {
             // Create a new SpriteBatch, which can be used to draw textures.
+            Textures = new Dictionary<string, Texture2D>();
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
             worldMap = new WorldMap(GraphicsDevice, Content);
 
             engine = new Engine(GraphicsDevice, Content) { WorldMap = worldMap };
             engine.LoadContent();
+
+            flatTextures = Content.Load<Texture2D>("misctiles");
+            Textures.Add("losescreen", Content.Load<Texture2D>("endscreen_bad"));
 
 
             // TODO: use this.Content to load your game content here
@@ -88,6 +94,10 @@ namespace LD27
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            int screenw = GraphicsDevice.Viewport.Width;
+            int screenh = GraphicsDevice.Viewport.Height;
+            Creature player = worldMap.Player; 
+
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
             KeyboardState kbdState = Keyboard.GetState();
@@ -96,21 +106,25 @@ namespace LD27
             float yshift = 0;
             float zshift = 0;
             if (kbdState.IsKeyDown(Keys.Up)) {
-                yshift += 0.1f;
+                yshift += player.Speed/100f;
+                player.Direction = -Math.PI/2;
             }
 
             if (kbdState.IsKeyDown(Keys.Down))
             {
-                yshift -= 0.1f;
+                yshift -= player.Speed / 100f;
+                player.Direction = Math.PI / 2;
             }
             if (kbdState.IsKeyDown(Keys.Left))
             {
-                xshift -= 0.1f;
+                xshift -= player.Speed / 100f;
+                player.Direction = Math.PI;
             }
 
             if (kbdState.IsKeyDown(Keys.Right))
             {
-                xshift += 0.1f;
+                xshift += player.Speed / 100f;
+                player.Direction = 0;
             }
 
 
@@ -124,9 +138,47 @@ namespace LD27
                 zshift += 0.05f;
             }
 
+            if (kbdState.IsKeyDown(Keys.Z)) 
+            {
+                var loc = player.GetMoveLocation(AdjustVector2(worldMap.Viewport, screenw / 2, screenh / 2), player.Direction, player.Range);
+                worldMap.Player.Set("attacking", 0.5f);
+                worldMap.Forces.Add(new Attack()
+                {
+                    Visual = Force.Visuals.Test,
+                    Creator = worldMap.Player,
+                    WorldMap = worldMap,
+                    Damage = player.Attack,
+                    Location = loc,
+                    Range = player.Range,
+                    
+                });
+            }
 
-            int screenw = GraphicsDevice.Viewport.Width;
-                int screenh = GraphicsDevice.Viewport.Height;
+            if (kbdState.IsKeyDown(Keys.X))
+            {
+                worldMap.Player.Set("attacking", 0.5f);
+                worldMap.Forces.Add(new Attack()
+                {
+                    Visual = Force.Visuals.Test2,
+                    Creator = worldMap.Player,
+                    WorldMap = worldMap,
+                    Damage = 10 * player.Attack,
+                    Location = AdjustVector2(worldMap.Viewport, screenw/2, screenh/2),
+                    Range = player.Range,
+                    Duration = 10
+                });
+            }
+
+            if (kbdState.IsKeyDown(Keys.Enter)) {
+                if (player.Health <= 0)
+                {
+                    //player.Health = 100;
+                    worldMap = new WorldMap(GraphicsDevice, Content);
+
+                }
+            }
+
+
                 float aspect = GraphicsDevice.Viewport.AspectRatio;
             
 
@@ -153,6 +205,11 @@ namespace LD27
             engine.Update(gameTime);            
         }
 
+        public static Vector2 AdjustVector2(Vector2 vector2, int p1, int p2)
+        {
+            return new Vector2(vector2.X + p1, vector2.Y + p2);
+        }
+
         /// <summary>
         /// This is called when the game should draw itself.
         /// </summary>
@@ -164,8 +221,24 @@ namespace LD27
             this.Window.Title = string.Format("LD27 (FPS: {0})", fps);
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            engine.Draw(GraphicsDevice, gameTime);
+            if (worldMap.Player.Health <= 0) {
+                spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
+                spriteBatch.GraphicsDevice.SamplerStates[0].Filter = TextureFilter.Point;
+                spriteBatch.Draw(Textures["losescreen"],
+                    new Rectangle(0,0,GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height), 
+                    new Rectangle(0,0,320,200), Color.White);
+                spriteBatch.End();
+            }
+            else
+            {
+                engine.Draw(GraphicsDevice, gameTime);
 
+                spriteBatch.Begin();
+                spriteBatch.Draw(flatTextures,
+                    new Rectangle(3, 3, 8, (int)(GraphicsDevice.Viewport.Height - 6) * (int)worldMap.Player.Health / 100), new Rectangle(0, 0, 64, 64), Color.White, 0, Vector2.Zero,
+                    SpriteEffects.None, 0);
+                spriteBatch.End();
+            }
             base.Draw(gameTime);
         }
     }
