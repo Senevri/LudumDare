@@ -25,13 +25,16 @@ namespace LD27
         private GraphicsDevice device;
         private ContentManager content;
         private double previousUpdateTotalSeconds;
+        private int screenw;
+        private int screenh;
+
 
 
         public WorldMap(GraphicsDevice device, Microsoft.Xna.Framework.Content.ContentManager content) {
             this.device = device;
             this.content = content;
-            var screenw = device.PresentationParameters.BackBufferWidth;
-            var screenh = device.PresentationParameters.BackBufferHeight;
+            screenw = device.PresentationParameters.BackBufferWidth;
+            screenh = device.PresentationParameters.BackBufferHeight;
             Portals = new List<SpawnPortal>();
 
             map = Squared.Tiled.Map.Load("Content\\WorldMap.tmx", content);
@@ -109,7 +112,7 @@ namespace LD27
 
                 // new direction;
                 foreach (var creature in this.Creatures) {
-                    creature.Direction = random.Next() * Math.PI * 2;
+                    creature.Direction = random.Next(0, 360) * Math.PI / 180;
                 }
 
                 foreach (var portal in this.Portals) {
@@ -125,8 +128,21 @@ namespace LD27
                     if (creature.Type != Creature.Types.CIVILIAN) { 
                         //move creature; pause just before deadline
                         if (time < 9.5) {
-                            creature.Move(creature.Direction, creature.Speed, this);
+                            if (!creature.Move(creature.Direction, creature.Speed, this)) {
+                                creature.Direction = creature.Direction + (random.Next(0,2) -1) * Math.PI / 8;
+
+                                // no multiple loops in circle
+                                if (creature.Direction > Math.PI * 2) {
+                                    creature.Direction = 0;
+                                }
+                                else if (creature.Direction < 0) {
+                                    creature.Direction += 2 * Math.PI;
+                                }
+                            }
                         }
+                    }
+                    if (creature.AIScript != null) {
+                        creature.AIScript(creature, this, (random.Next(0, 100)/100.0));
                     }
                 }
                 previousUpdateTotalSeconds = gameTime.TotalGameTime.TotalSeconds;
@@ -164,9 +180,12 @@ namespace LD27
                 // for now, just test the target.
             foreach (var layer in this.map.Layers.Values) {                
                 Point position = new Point();
-                position.X = (int)Math.Floor((Target.X+shiftx)/map.TileWidth);
-                position.Y = (int)Math.Floor((Target.Y+shifty)/map.TileHeight);
+                position.X = (int)Math.Round((Target.X+shiftx)/map.TileWidth);
+                position.Y = (int)Math.Round((Target.Y+shifty)/map.TileHeight);
                 //get tile position in reference to Target location (in pixels) 
+                if (position.X < 0 || position.Y < 0 || position.X > map.TileWidth || position.Y > map.TileHeight) {
+                    return false;
+                }
                 int tile = layer.GetTile(position.X, position.Y);
                 if (tile.Equals(1)) {
                     return true;
@@ -184,6 +203,26 @@ namespace LD27
 
             float distance = (float)Math.Sqrt(Math.Pow(x2-x1, 2) + Math.Pow(y2-y1, 2));
             return distance;
+        }
+
+        internal float GetDistance(Vector2 vector21, Vector2 vector22)
+        {
+            return GetDistance(vector21.X, vector21.Y, vector22.X, vector22.Y);
+        }
+
+        internal double GetAngle(Vector2 source, Vector2 destination)
+        {
+            return Math.Atan2(destination.Y - source.Y, destination.X - source.X);
+        }
+
+        internal Vector2 ConvertLocationToPixelPosition(Vector2 source)
+        {
+            var aspect = device.Viewport.AspectRatio;
+            Vector2 Out = new Vector2(
+                ((screenw/2)/aspect)*(1+source.X) + this.X+128+32, // see if we're off by 2x tilewidth FIXME!
+                (screenh/2)*(1-source.Y) + this.Y
+                );
+            return Out;
         }
     }
 }

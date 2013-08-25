@@ -114,7 +114,9 @@ namespace LD27
                 Texture = Textures["mapRender"]
             }, new Vector2(Camera.X, Camera.Y)));
 
-            namedQuads.Add("timer", Write(string.Format("{0:0}", 0), screenw / 2, 32, new Vector3(0, 0, 0), 0.1f));
+            
+
+                //Write(string.Format("{0:0}", 0), screenw / 2, 32, new Vector3(0, 0, 0), 0.1f));
 
             storedQuads.Add(namedQuads["map"]);
             storedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(32, 32)));
@@ -131,9 +133,23 @@ namespace LD27
             namedQuads.Add("player", AddSpriteSheet(Textures["playerspritesheet"], WorldMap.Player.Location));
             namedQuads.Add("tiles", AddSpriteSheet(Textures["tilesheet"], Vector2.Zero, false, false));
             namedQuads.Add("enemies", AddSpriteSheet(Textures["youmaspritesheet"], Vector2.Zero, false, false));
+            namedQuads.Add("timer", AddSpriteSheet(Textures["bmpFont"], PixelPositionToVector2(screenw / 2, 32)));
+
+            // TODO: animation generator
+            // set texture to first frame;
+            //timer.First(GraphicsDevice);
+            var timer = (namedQuads["timer"] as SpriteSheet);
+            timer.Current = 42;
+            timer.SetTileToCurrent(GraphicsDevice);            
+            timer.AnimationIndexes["timer"] = Enumerable.Range(32, 10).ToArray();
+            System.Diagnostics.Debug.Assert(timer.AnimationIndexes["timer"].Contains(41));
+            timer.Animation = "timer";
+            timer.Delay = 0.999f;
+            
 
             //storedQuads.AddRange(sprites);
         }
+        
 
         private SpriteSheet AddSpriteSheet(Texture2D texture, Vector2 position, bool animated = true, bool show = true)
         {
@@ -175,9 +191,14 @@ namespace LD27
 
             float seconds = (float)gameTime.TotalGameTime.TotalSeconds - prevSeconds;
 
-            namedQuads["timer"] = Write(string.Format("{0:0}", seconds), (screenw / 2) + (int)Math.Round(Camera.X * screenw / (2.0 * aspect)), 32 - (int)Math.Round(Camera.Y * screenh / 2.0), new Vector3(0, 0, 0), 0.1f);
+            namedQuads["timer"].Position = new Vector2 (
+                 Camera.X,
+                 Camera.Y + 0.8f
+            );
+        
 
-            renderQuads.Add(namedQuads["timer"]);
+            renderQuads.Add((namedQuads["timer"] as SpriteSheet));
+
             if (seconds > 10.9)
             {
                 prevSeconds = (float)gameTime.TotalGameTime.TotalSeconds;

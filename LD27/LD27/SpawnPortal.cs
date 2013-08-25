@@ -19,9 +19,14 @@ namespace LD27
             var out_list = new List<Creature>();
             for (var i = 0; i < Size; i++) { 
                 out_list.Add(new Creature() { 
+                    Attack = 1,
+                    Speed = 1,
                     Location = this.Location, 
                     Type = this.CreatureTypes.ElementAt(random.Next(0, this.CreatureTypes.Length - 1)),
-                    Direction = random.Next() * Math.PI * 2
+                    Range = 64,
+                    Health = 2,
+                    Direction = random.Next(0, 360) * Math.PI / 180,
+                    AIScript = Creature.ChargePlayerIfInRange
                 });
             }
             return out_list;

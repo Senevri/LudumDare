@@ -49,6 +49,7 @@ namespace LD27
         }
 
         public SpriteSheet(Texture2D texture, int columns = 8, int tilewidth = 64, int tileheight = 64, float scale=0.1f, float scaley=0.1f) : base(new TexturedQuad(scale, scaley), new Vector2()) {
+            this.Show = true;
             this._spriteSheet = texture;
             this.tileHeight = tileheight;
             this.tileWidth = tilewidth;

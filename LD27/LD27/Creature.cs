@@ -17,13 +17,13 @@ namespace LD27
         public Types Type { get; set; }
         public int Kills { get; set; }
         public int Health { get; set; }
-        public int Atttack { get; set; }
+        public int Attack { get; set; }
         public int Range { get; set; }
         public float Speed { get; set; }
         public double Direction { get; set; }
 
 
-        public delegate void AIScriptCallback(WorldMap worldMap);
+        public delegate void AIScriptCallback(Creature creature, WorldMap worldMap, double random);
 
         public AIScriptCallback AIScript { get; set; }
 
@@ -40,7 +40,7 @@ namespace LD27
 
             var xpos = Location.X + locationShift.X;
             var ypos = Location.Y + locationShift.Y;
-            return IfValidPathThenUpdateLocation(worldMap, xpos, ypos);
+            return IfValidPathThenUpdateLocation(worldMap, xpos+32, ypos+32);
         }
 
         public bool Move(double angle, double distance, WorldMap worldMap) {
@@ -59,6 +59,17 @@ namespace LD27
                 return true;
             }
             return false;
+        }
+
+        internal static void ChargePlayerIfInRange(Creature creature, WorldMap worldMap, double random = 1)
+        {
+            if (random < 0.6) { return; };
+            var distance = worldMap.GetDistance(creature.Location, worldMap.ConvertLocationToPixelPosition(worldMap.Player.Location));
+            if (distance < (5 * creature.Range)) {
+                creature.Speed = 6;
+
+                creature.Direction = worldMap.GetAngle(creature.Location, worldMap.ConvertLocationToPixelPosition(worldMap.Player.Location));
+            }
         }
     }
 }

@@ -138,7 +138,7 @@ namespace LD27
 
             var worldMapTarget = new Vector2(worldMap.X + xpixels, worldMap.Y - ypixels);
 
-            if (worldMap.IsValidPath(worldMap.Viewport, worldMapTarget, screenw/2, screenh/2)) {
+            if (worldMap.IsValidPath(worldMap.Viewport, worldMapTarget, (screenw/2)-32, (screenh/2)-32)) {
 
                 engine.Camera = new Vector3(engine.Camera.X + xshift, engine.Camera.Y + yshift, engine.Camera.Z + zshift);
                 engine.Target = new Vector3(engine.Target.X + xshift, engine.Target.Y + yshift, -1);
