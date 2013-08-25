@@ -477,11 +477,12 @@ namespace Squared.Tiled {
                 destPos.Y += tileHeight;
             }
         }
+        
     }
 
     public class ObjectGroup
     {
-        public SortedList<string, Object> Objects = new SortedList<string, Object>();
+        public List<Object> Objects = new List<Object>();
         public SortedList<string, string> Properties = new SortedList<string, string>();
 
         public string Name;
@@ -522,6 +523,8 @@ namespace Squared.Tiled {
                                     {
                                         st.Read();
                                         var objects = Object.Load(st);
+                                        result.Objects.Add(objects);
+                                        /*
                                         if (!result.Objects.ContainsKey(objects.Name))
                                         {
                                             result.Objects.Add(objects.Name, objects);
@@ -530,6 +533,7 @@ namespace Squared.Tiled {
                                             int count = result.Objects.Keys.Count((item) => item.Equals(objects.Name));
                                             result.Objects.Add(string.Format("{0}{1}", objects.Name, count), objects);
                                         }
+                                        */
                                     }
                                 } break;
                             case "properties":
@@ -573,7 +577,7 @@ namespace Squared.Tiled {
 
         public void Draw(Map result, SpriteBatch batch, Rectangle rectangle, Vector2 viewportPosition)
         {
-            foreach (var objects in Objects.Values)
+            foreach (var objects in Objects)
             {
                 if (objects.Texture != null)
                 {
@@ -700,7 +704,9 @@ namespace Squared.Tiled {
     {
         public SortedList<string, Tileset> Tilesets = new SortedList<string, Tileset>();
         public SortedList<string, Layer> Layers = new SortedList<string, Layer>();
-        public SortedList<string, ObjectGroup> ObjectGroups = new SortedList<string, ObjectGroup>();
+        //public SortedList<string, ObjectGroup> ObjectGroups = new SortedList<string, ObjectGroup>();
+        // Bug with similarily named objectgroups.
+        public List<ObjectGroup> ObjectGroups = new List<ObjectGroup>();
         public SortedList<string, string> Properties = new SortedList<string, string>();
         public int Width, Height;
         public int TileWidth, TileHeight;
@@ -759,7 +765,7 @@ namespace Squared.Tiled {
                                             {
                                                 st.Read();
                                                 var objectgroup = ObjectGroup.Load(st);
-                                                result.ObjectGroups.Add(objectgroup.Name, objectgroup);
+                                                result.ObjectGroups.Add(objectgroup);
                                             }
                                         } break;
                                     case "properties":
@@ -804,9 +810,9 @@ namespace Squared.Tiled {
                 );
             }
 
-            foreach (var objects in result.ObjectGroups.Values)
+            foreach (var objects in result.ObjectGroups)
             {
-                foreach (var item in objects.Objects.Values)
+                foreach (var item in objects.Objects)
                 {
                     if (item.Image != null)
                     {
@@ -831,7 +837,7 @@ namespace Squared.Tiled {
                 layers.Draw(batch, Tilesets.Values, rectangle, viewportPosition, TileWidth, TileHeight);
             }
 
-            foreach (var objectgroups in ObjectGroups.Values)
+            foreach (var objectgroups in ObjectGroups)
             {
                 objectgroups.Draw(this, batch, rectangle, viewportPosition);
             }

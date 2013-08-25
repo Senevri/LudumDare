@@ -27,6 +27,7 @@ namespace LD27
 
         public Dictionary<string, int[]> AnimationIndexes;
         private PositionedQuad pq;
+        private SpriteSheet sheet;
         
         public SpriteSheet(TexturedQuad quad, Vector2 position) : base(quad, position) {
             this.Initialize();
@@ -56,8 +57,31 @@ namespace LD27
             this.tileCount = columns * rows;
             this.Initialize();
             this.Delay = 0.5f;
+            this.Scale = tilewidth*1.666f / 800f;
+            this.ScaleY = tileheight / 480;
             //this.Rescale(this.tileHeight/480);
+            this.GenerateVertices();
          
+        }
+
+        // Copy constructor
+        public SpriteSheet(SpriteSheet sheet) : base(sheet, sheet.Position)
+        {
+            //// TODO: Complete member initialization
+            this.tileHeight = sheet.tileHeight;
+            this.tileWidth = sheet.tileWidth;
+            this.columns = sheet.columns;
+            this.Current = sheet.Current;
+            this.Texture = sheet.Texture;
+            this.tileCount = sheet.tileCount;
+            this._currentAnimation = sheet._currentAnimation;
+            this.AnimationIndexes = sheet.AnimationIndexes;
+            this.Show = sheet.Show;
+            this.isAnimated = sheet.isAnimated;
+            this.Scale = sheet.Scale;
+            this.ScaleY = sheet.ScaleY;
+            this.Position = sheet.Position;
+            this.GenerateVertices();
         }
 
         /*public SpriteSheet(PositionedQuad pq) : base(pq)
@@ -99,6 +123,13 @@ namespace LD27
             return tex;
         }
 
+        public void SetTileToCurrent(GraphicsDevice device) {
+            //var pq = (this as PositionedQuad);
+            Texture2D currentTile = new Texture2D(device, this.tileWidth, this.tileHeight);
+            currentTile.SetData<Color>(GetRectColors(GetRectFromIndex(Current)));
+            this.Texture = currentTile;
+            //return pq;
+        }
 
         public Texture2D Next(Texture2D prev)
         {
@@ -153,13 +184,17 @@ namespace LD27
         }
 
         public SpriteSheet Rescale() {
-            Console.WriteLine("sx {0}, sy {1}", this.Scale, this.ScaleY);
-            //this.GenerateVertices();
+            //Console.WriteLine("sx {0}, sy {1}", this.Scale, this.ScaleY);
+            this.GenerateVertices();
             return this;
         }
 
         internal bool AllowNextFrame(double p)
         {
+            if (!isAnimated) {
+                return false;
+            }
+
             if (this.lastFrameShown + Delay < p) {
                 this.lastFrameShown = p;
                 return true;
@@ -167,6 +202,8 @@ namespace LD27
             return false;
             
         }
+
+        public bool isAnimated { get; set; }
     }
 
 }

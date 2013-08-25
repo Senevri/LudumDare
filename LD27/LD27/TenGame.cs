@@ -35,7 +35,8 @@ namespace LD27
 
 
         //FIXME ugly
-        public static GraphicsDevice GetGraphicsDevice() {
+        public static GraphicsDevice GetGraphicsDevice()
+        {
             return TenGame._graphicsDevice;
         }
 
@@ -50,7 +51,7 @@ namespace LD27
             // TODO: Add your initialization logic here
 
             base.Initialize();
-            
+
         }
 
         /// <summary>
@@ -64,10 +65,10 @@ namespace LD27
 
             worldMap = new WorldMap(GraphicsDevice, Content);
 
-            engine = new Engine(GraphicsDevice, Content) { WorldMap = worldMap};
+            engine = new Engine(GraphicsDevice, Content) { WorldMap = worldMap };
             engine.LoadContent();
 
-           
+
             // TODO: use this.Content to load your game content here
         }
 
@@ -124,28 +125,32 @@ namespace LD27
             }
 
 
-            //worldMap.Viewport = new Vector2(worldMap.Viewport.X + xshift, worldMap.Viewport.Y + yshift);
-
-            engine.Camera = new Vector3(engine.Camera.X + xshift, engine.Camera.Y + yshift, engine.Camera.Z + zshift);
-            engine.Target = new Vector3(engine.Target.X + xshift, engine.Target.Y + yshift, -1);
             int screenw = GraphicsDevice.Viewport.Width;
-            int screenh = GraphicsDevice.Viewport.Height;
-            float aspect = GraphicsDevice.Viewport.AspectRatio;
-
-            // TODO: Add your update logic here            
-            base.Update(gameTime);
-            engine.Update(gameTime);
-            //engine.MoveQuad("timer", xshift, yshift, zshift);
-
-            var xpixels = (engine.Camera.X/aspect)*screenw/2;
-            var ypixels = (engine.Camera.Y) * screenh / 2;
+                int screenh = GraphicsDevice.Viewport.Height;
+                float aspect = GraphicsDevice.Viewport.AspectRatio;
             
-            worldMap.Viewport = new Vector2(worldMap.X + xpixels, worldMap.Y - ypixels);
 
-            // keep player  at the center of the screen.
-            worldMap.Player.Location = worldMap.Viewport;
+            float targetX = engine.Camera.X + xshift;
+            float targetY = engine.Camera.Y + yshift;
+            var xpixels = (targetX/aspect)*screenw/2;
+            var ypixels = (targetY) * screenh / 2;
 
 
+            var worldMapTarget = new Vector2(worldMap.X + xpixels, worldMap.Y - ypixels);
+
+            if (worldMap.IsValidPath(worldMap.Viewport, worldMapTarget, screenw/2, screenh/2)) {
+
+                engine.Camera = new Vector3(engine.Camera.X + xshift, engine.Camera.Y + yshift, engine.Camera.Z + zshift);
+                engine.Target = new Vector3(engine.Target.X + xshift, engine.Target.Y + yshift, -1);
+
+                worldMap.Viewport = worldMapTarget;
+
+                // keep player  at the center of the screen.
+                worldMap.Player.Location = worldMap.Viewport;
+            }
+
+            base.Update(gameTime);
+            engine.Update(gameTime);            
         }
 
         /// <summary>

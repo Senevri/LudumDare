@@ -44,7 +44,7 @@ namespace LD27
             return this;
         }
 
-        private void GenerateVertices()
+        protected void GenerateVertices()
         {
             Vertices = new VertexPositionNormalTexture[6];
             Vertices[0] = genVertice(-1.0f, 1.0f, 0, 0.0f, 0.0f);

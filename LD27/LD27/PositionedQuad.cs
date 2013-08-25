@@ -32,6 +32,8 @@ namespace LD27
             }            
         }
 
+        public bool Show { get; set; }
+
         /*public Matrix GetTranslationMatrix() {
             Matrix outMatrix; 
             var tl = new Vector3(Position.X, Position.Y, -1.0f);
@@ -43,6 +45,9 @@ namespace LD27
             Texture = quad.Texture;
             Vertices = quad.Vertices;
             Position = position;
+            Show = true;
+            Scale = quad.Scale;
+            ScaleY = quad.ScaleY;
         }
 
         
