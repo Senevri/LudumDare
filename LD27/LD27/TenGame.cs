@@ -131,6 +131,7 @@ namespace LD27
                     Speed = 4
 
                 });
+                startTime = -1;
             }
 
             if (kbdState.IsKeyDown(Keys.X))
@@ -263,7 +264,8 @@ namespace LD27
             {
                 engine.Draw(GraphicsDevice, gameTime);
 
-                spriteBatch.Begin();
+                spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
+                spriteBatch.GraphicsDevice.SamplerStates[0].Filter = TextureFilter.Point;
                 spriteBatch.Draw(flatTextures,
                     new Rectangle(3, 3, 8, (int)(GraphicsDevice.Viewport.Height - 6) * (int)worldMap.Player.Health / 100), new Rectangle(0, 0, 64, 64), Color.White, 0, Vector2.Zero,
                     SpriteEffects.None, 0);

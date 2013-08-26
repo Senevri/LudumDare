@@ -129,6 +129,7 @@ namespace LD27
             double timeDelta = gameTime.TotalGameTime.TotalSeconds - previousUpdateTotalSeconds;
             if ((time >= 10) && timeDelta > 0.040) {
                 TenSecondUpdate(time, random);
+                this.Disaster = false;
             }
 
             if (timeDelta > 0.040) {//25fps 
@@ -229,7 +230,7 @@ namespace LD27
             }
 
             time = 0;
-            this.Disaster = false;
+            
         }
 
         

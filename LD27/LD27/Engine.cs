@@ -22,7 +22,7 @@ namespace LD27
         private Dictionary<string, PositionedQuad> namedQuads;
         private List<PositionedQuad> renderQuads;
         private Microsoft.Xna.Framework.Content.ContentManager Content;
-        private List<SpriteSheet> sprites;
+        private Dictionary<string, SpriteSheet> sprites;
 
         private Dictionary<string, SoundEffect> Sounds;
 
@@ -59,7 +59,7 @@ namespace LD27
             this.renderQuads = new List<PositionedQuad>();
             this.storedQuads = new List<PositionedQuad>();
             this.textQuads = new List<PositionedQuad>();
-            this.sprites = new List<SpriteSheet>();
+            this.sprites = new Dictionary<string, SpriteSheet>();
             this.namedQuads = new Dictionary<string, PositionedQuad>();
             this.Sounds = new Dictionary<string, SoundEffect>();
 
@@ -79,6 +79,7 @@ namespace LD27
             Textures = new Dictionary<string, Texture2D>();
             Camera = new Vector3(0, 0, 1);
             Target = new Vector3(0, 0, -1);
+            vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, this.renderQuads.Count * 6, BufferUsage.WriteOnly);
         }
 
         public Vector2 GetScreenUpperLeft() {
@@ -140,22 +141,10 @@ namespace LD27
 
             
 
-                //Write(string.Format("{0:0}", 0), screenw / 2, 32, new Vector3(0, 0, 0), 0.1f));
-
+            
             storedQuads.Add(namedQuads["map"]);
-            /*
-            storedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(32, 32)));
-            storedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(96, 32)));
-            storedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(160, 32)));
-            storedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(224, 32)));
-            storedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(288, 32)) { Rotation = new Vector3(0, 0, (float)(Math.PI / 4)) });
-            storedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, new Vector2(0.5f, 0)) { Rotation = new Vector3(0, 0, (float)(-Math.PI / 4)) });
-            storedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, new Vector2(0.5f, 0.5f)));
-            storedQuads.Add(new PositionedQuad(new TexturedQuad(defaultScale) { Texture = Textures["test"] }, PixelPositionToVector2(screenw - 32, screenh - 32)) { Rotation = new Vector3(0, 0, (float)(-Math.PI / 8)) });
-             */
-            //storedQuads.Add(namedQuads["timer"]);
-
-            var misc = AddSpriteSheet(Textures["misc"], Vector2.Zero, false, false);
+            
+            var misc = AddSpriteSheet("misc", Textures["misc"], Vector2.Zero, false, false);
             misc.SetTileSize(128, 128);
             misc.Scale = 3*aspect / 12.5f;
             misc.ScaleY = 3 / 8f;
@@ -163,39 +152,27 @@ namespace LD27
             misc.AnimationIndexes.Add("bigportal", Enumerable.Range(4, 4).ToArray());
             misc.Animation = "bigportal";
             misc.Rescale();
-            namedQuads.Add("misc", misc);
-
-            var player = AddSpriteSheet(Textures["playerspritesheet"], WorldMap.Player.Location);
+            
+            var player = AddSpriteSheet("player", Textures["playerspritesheet"], WorldMap.Player.Location);
             player.AnimationIndexes.Add("attack", Enumerable.Range(16, 5).ToArray());
-            namedQuads.Add("player", player);
+            
+            namedQuads.Add("tiles", AddSpriteSheet("tiles", Textures["tilesheet"], Vector2.Zero, false, false));
 
-            namedQuads.Add("tiles", AddSpriteSheet(Textures["tilesheet"], Vector2.Zero, false, false));
-
-            var enemies = AddSpriteSheet(Textures["youmaspritesheet"], Vector2.Zero, false, false);
+            var enemies = AddSpriteSheet("enemies", Textures["youmaspritesheet"], Vector2.Zero, false, false);
             enemies.Delay = 0.5f;
             enemies.AnimationIndexes.Add("small", new int[] { 0, 1});
             enemies.AnimationIndexes.Add("medium", new int[] { 8, 9 });
             enemies.AnimationIndexes.Add("large", new int[] { 16, 17 });
-            enemies.AnimationIndexes.Add("itcomes", new int[] { 24, 25, 26 });
+            enemies.AnimationIndexes.Add("itcomes", new int[] { 24, 25, 26 });                        
             
+            var timer = AddSpriteSheet("timer", Textures["bmpFont"], PixelPositionToVector2(screenw / 2, 32));
             
-
-            namedQuads.Add("enemies", enemies);
-
-            var timer = AddSpriteSheet(Textures["bmpFont"], PixelPositionToVector2(screenw / 2, 32));
-            namedQuads.Add("timer", timer);
-
-            var sfx = AddSpriteSheet(Textures["sfx"], Vector2.Zero, false, false);
+            var sfx = AddSpriteSheet("sfx", Textures["sfx"], Vector2.Zero, false, false);
             sfx.Delay = 0.200f;
             sfx.AnimationIndexes.Add("row1", Enumerable.Range(0, 7).ToArray());
             sfx.AnimationIndexes.Add("row2", Enumerable.Range(8,6).ToArray());
             sfx.AnimationIndexes.Add("bloody", Enumerable.Range(16, 5).ToArray());
-            namedQuads.Add("sfx", sfx);
 
-            // TODO: animation generator
-            // set texture to first frame;
-            //timer.First(GraphicsDevice);
-            
             timer.Current = 42;
             timer.SetTileToCurrent(GraphicsDevice);            
             timer.AnimationIndexes["timer"] = Enumerable.Range(32, 10).ToArray();
@@ -208,21 +185,22 @@ namespace LD27
         }
         
 
-        private SpriteSheet AddSpriteSheet(Texture2D texture, Vector2 position, bool animated = true, bool show = true)
+        private SpriteSheet AddSpriteSheet(string name, Texture2D texture, Vector2 position, bool animated = true, bool show = true)
         {
             //spritesheet is by default a 8x8 grid, so.... 
             // 
-            sprites.Add(new SpriteSheet(texture, GraphicsDevice, 8, 64, 64, aspect / 12.5f, 1 / 8f) { Show = show });
-            sprites.Last().Texture = null;
-            sprites.Last().isAnimated = animated;
-            sprites.Last().AnimationIndexes.Add("test", new int[] { 0, 1 });
-            sprites.Last().AnimationIndexes.Add("test1", new int[] { 9 });
-            sprites.Last().Animation = "test";
-            sprites.Last().Position = position;
+            sprites.Add(name, new SpriteSheet(texture, GraphicsDevice, 8, 64, 64, aspect / 12.5f, 1 / 8f) { Show = show });
+            var sprite = sprites.Values.Last();
+            sprite.Texture = null;
+            sprite.isAnimated = animated;
+            sprite.AnimationIndexes.Add("test", new int[] { 0, 1 });
+            sprite.AnimationIndexes.Add("test1", new int[] { 9 });
+            sprite.Animation = "test";
+            sprite.Position = position;
             
-            sprites.Last().First(GraphicsDevice);
+            sprite.First(GraphicsDevice);
 
-            return sprites.Last();
+            return sprite;
         }
 
         internal Vector2 PixelPositionToVector2(int x, int y) {
@@ -270,9 +248,9 @@ namespace LD27
                 }
             }
 
-            renderQuads.AddRange(sprites);
+            renderQuads.AddRange(sprites.Values);
             if (WorldMap.Player.Is("attacking")) {
-                var player = (namedQuads["player"] as SpriteSheet);
+                var player = sprites["player"];
                 if (player.Animation.Equals("attack") && player.Current == player.AnimationIndexes["attack"].Last())
                 {
                     WorldMap.Player.Set("attacking", 0);
@@ -288,7 +266,7 @@ namespace LD27
 
             
 
-            var enemies = (namedQuads["enemies"] as SpriteSheet);
+            var enemies = sprites["enemies"];
             //enemies.Current = 0;
             //enemies.SetTileToCurrent(GraphicsDevice);            
 
@@ -337,7 +315,7 @@ namespace LD27
             foreach (var loc in WorldMap.Locations) {
                 if (WorldMap.EndGame && loc.Type == "EndGame") {
                     var v = PixelPositionToVector2((int)((loc.X - WorldMap.X) + loc.Width/2), (int)((loc.Y - WorldMap.Y) + loc.Height/2));
-                    var misc = (namedQuads["misc"] as SpriteSheet);
+                    var misc = sprites["misc"];
                     misc.Animation = "bigportal";
                     if (misc.AllowNextFrame(gameTime.TotalGameTime.TotalSeconds))
                     {
@@ -353,7 +331,7 @@ namespace LD27
             }
 
 
-            var sfx = (namedQuads["sfx"] as SpriteSheet);
+            var sfx = sprites["sfx"];
             sfx.isAnimated = true;
             //Console.WriteLine("sfx count: {0}, creature count: {1}", WorldMap.Forces.Count, WorldMap.Creatures.Count);
             foreach (var force in WorldMap.Forces) { 
@@ -409,7 +387,8 @@ namespace LD27
                 verts.AddRange(quad.Vertices);
             }
 
-            //vertexBuffer.SetData(positionedQuads.SelectMany((q) => (q.Vertices)).ToArray());            
+            //vertexBuffer.SetData(positionedQuads.SelectMany((q) => (q.Vertices)).ToArray());   
+         
             vertexBuffer.SetData(verts.ToArray());
 
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
@@ -418,24 +397,23 @@ namespace LD27
 
             SetupEffect(); 
             // foreach object in some list 
-            if ((namedQuads["timer"] as SpriteSheet).Current == 41)
+            if (sprites["timer"].Current == 41)
             {
-                //this.WorldMap.Disaster = true;
+                this.WorldMap.Disaster = true;
                 seconds = 10;
+                //sprites["timer"].isAnimated = false;
             }
             foreach (var quad in renderQuads)
             {
                 if (quad.Show)
                 {
                     Effect.Texture = null;
-                    //Effect.TextureEnabled = false;                                  
                     Effect.Texture = quad.Texture;
                     foreach (EffectPass pass in Effect.CurrentTechnique.Passes)
                     {
                         pass.Apply();
                         GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, quad.Vertices, 0, 2);
                     }
-                    //endforeach
                     
                     var sheet = quad as SpriteSheet;
                     if (null != sheet && sheet.AllowNextFrame(gameTime.TotalGameTime.TotalSeconds))
@@ -448,62 +426,7 @@ namespace LD27
             //Console.WriteLine("Engine Draw time: {0}", DateTime.Now.Ticks - ticks);
         }
 
-        internal PositionedQuad Write(string text, int screenx, int screeny, Vector3 rotation, float scale = 1) {
-            Texture2D tex = Textures["bmpFont"];
-            int columns = 8;
-            int pixelwidth = 64;
-            Color[] data = new Color[tex.Width * tex.Height];
-            //useless padding.
-            Color[] letters = new Color[(64*text.Length)*64];
-            tex.GetData<Color>(data);
-            int letterindex = 0;
-            foreach (char letter in text.ToLower())
-            {
-                int gid = 0;
-                if (Char.IsNumber(letter))
-                {
-                    gid = 31 + (int)Char.GetNumericValue(letter);
-                }
-                else if (letter >= 'a')
-                {
-                    gid = letter - 'a';
-                }
-                else if (letter.Equals(' '))
-                {
-                    gid = 63;
-                }
-                else 
-                { //period
-                    gid = 30;
-                }
-
-                //int xmod = (gid % columns) * pixelwidth;
-                //int ymod = (int)(Math.Floor((float)gid / columns)) * (tex.Width);
-                for (int y = 0; y < 64; y++)
-                {
-                    for (int x = 0; x < pixelwidth; x++)
-                    {
-                        //int dataindex = x + xmod + ((int)y * ymod);
-                        //int dataindex = x + xmod + (y * tex.Width) + (ymod * 64);
-                        int dataindex = x + (gid % columns) * pixelwidth + (y * tex.Width) + ((int)(Math.Floor((float)gid / columns)) * (tex.Width) * 64);
-                        int stringTextureIndex = (y * (64 * text.Length)) + (64 * letterindex) + x;
-                        letters[stringTextureIndex] = data[dataindex];
-                    }
-                 
-                }
-                letterindex++;             
-            }
-
-            Texture2D texture = new Texture2D(GraphicsDevice, 64*text.Length, 64);
-            texture.SetData<Color>(letters);
-
-            PositionedQuad pq = new PositionedQuad(new TexturedQuad(scale, scale/text.Length) { 
-                Texture = texture}, 
-                PixelPositionToVector2(screenx, screeny));
-            return pq;
-            //this.positionedQuads.Add(pq);
-        }
-
+        
         private void SetupEffect()
         {
             Effect.View = viewMatrix;
@@ -546,8 +469,8 @@ namespace LD27
 
             //}
             namedQuads["map"].Position = new Vector2(Camera.X, Camera.Y);
-            namedQuads["player"].Position = new Vector2(Camera.X, Camera.Y);
-            namedQuads["timer"].Position = new Vector2(Camera.X, Camera.Y + 0.8f);
+            sprites["player"].Position = new Vector2(Camera.X, Camera.Y);
+            sprites["timer"].Position = new Vector2(Camera.X, Camera.Y + 0.8f);
         
             WorldMap.Player.Location = new Vector2(Camera.X,Camera.Y);
             //positionedQuads.Add(Write("this is a test", 400, 300, new Vector3(0, 0, 0), 0.8f));
@@ -555,7 +478,10 @@ namespace LD27
             //Effect.Texture = null;
             //positionedQuads[3].Rotation = new Vector3((float)(25 * Math.PI / 180), 0, 0);
             var seconds = (float)gameTime.TotalGameTime.TotalSeconds - prevSeconds;
-            WorldMap.Update(seconds, gameTime);                        
+            WorldMap.Update(seconds, gameTime);
+            if (!WorldMap.Disaster) {
+                sprites["timer"].isAnimated = true;
+            }
             if (seconds >= 10.0f)
             {
                 prevSeconds = (float)gameTime.TotalGameTime.TotalSeconds;
@@ -599,7 +525,68 @@ namespace LD27
                 this.vertexBuffer.Dispose();
                 this.vertexBuffer = null;
             }
+        
         }
+
+        internal PositionedQuad Write(string text, int screenx, int screeny, Vector3 rotation, float scale = 1)
+        {
+            Texture2D tex = Textures["bmpFont"];
+            int columns = 8;
+            int pixelwidth = 64;
+            Color[] data = new Color[tex.Width * tex.Height];
+            //useless padding.
+            Color[] letters = new Color[(64 * text.Length) * 64];
+            tex.GetData<Color>(data);
+            int letterindex = 0;
+            foreach (char letter in text.ToLower())
+            {
+                int gid = 0;
+                if (Char.IsNumber(letter))
+                {
+                    gid = 31 + (int)Char.GetNumericValue(letter);
+                }
+                else if (letter >= 'a')
+                {
+                    gid = letter - 'a';
+                }
+                else if (letter.Equals(' '))
+                {
+                    gid = 63;
+                }
+                else
+                { //period
+                    gid = 30;
+                }
+
+                //int xmod = (gid % columns) * pixelwidth;
+                //int ymod = (int)(Math.Floor((float)gid / columns)) * (tex.Width);
+                for (int y = 0; y < 64; y++)
+                {
+                    for (int x = 0; x < pixelwidth; x++)
+                    {
+                        //int dataindex = x + xmod + ((int)y * ymod);
+                        //int dataindex = x + xmod + (y * tex.Width) + (ymod * 64);
+                        int dataindex = x + (gid % columns) * pixelwidth + (y * tex.Width) + ((int)(Math.Floor((float)gid / columns)) * (tex.Width) * 64);
+                        int stringTextureIndex = (y * (64 * text.Length)) + (64 * letterindex) + x;
+                        letters[stringTextureIndex] = data[dataindex];
+                    }
+
+                }
+                letterindex++;
+            }
+
+            Texture2D texture = new Texture2D(GraphicsDevice, 64 * text.Length, 64);
+            texture.SetData<Color>(letters);
+
+            PositionedQuad pq = new PositionedQuad(new TexturedQuad(scale, scale / text.Length)
+            {
+                Texture = texture
+            },
+                PixelPositionToVector2(screenx, screeny));
+            return pq;
+            //this.positionedQuads.Add(pq);
+        }
+
 
     }
 }
