@@ -9,14 +9,14 @@ using System.Text;
 
 namespace LD27
 {
-    class WorldMap
+    class WorldMap : IDisposable
     {
         public Vector2 Viewport { get; set; }
         public List<Creature> Creatures { get; set; }        
         public Creature Player { get; set; }
 
         public List<SpawnPortal> Portals { get; set; }
-        public Dictionary<string, Rectangle[]> Locations { get; set; }
+        public List<Location> Locations { get; set; }
         public List<Force> Forces { get; set; } 
         public float X { get; set; }
         public float Y { get; set; }
@@ -42,7 +42,6 @@ namespace LD27
             EndGame = false;
             Portals = new List<SpawnPortal>();
 
-            map = Squared.Tiled.Map.Load("Content\\WorldMap.tmx", content);
             renderTarget = new RenderTarget2D(
                 device,
                 screenw,
@@ -55,7 +54,9 @@ namespace LD27
 
             this.Creatures = new List<Creature>();
             this.Forces = new List<Force>();
-
+            this.Locations = new List<Location>();
+            
+            
             Player = new Creature() { 
                 Type = Creature.Types.PLAYER, 
                 Location = new Vector2(0, 0), 
@@ -66,29 +67,47 @@ namespace LD27
                 Speed = 7                
             };
             //Player.AIScript = Creature.CreateAttackIfInRange;
-            Creatures.Add(Player);            
+            Creatures.Add(Player);
+            LoadMap("WorldMap.tmx");
+            
+        }
+
+        public void LoadMap(string mapname) {
+            map = Squared.Tiled.Map.Load(String.Format("Content\\{0}", mapname), content);
+
             Random random = new Random();
-            foreach (var grp in map.ObjectGroups) {
+            foreach (var grp in map.ObjectGroups)
+            {
                 //ObjectGroup grp = kvpair.Value;
-                foreach (var tiledobj in grp.Objects) {
-                    if (tiledobj.Name.Equals("Start")) {
+                foreach (var tiledobj in grp.Objects)
+                {
+                    if (tiledobj.Name.Equals("Start"))
+                    {
                         Console.WriteLine("object: {0}, x {1} y {2} width {3} height {4}", tiledobj.Name, tiledobj.X, tiledobj.Y, tiledobj.Width, tiledobj.Height);
-                        Player.Location = new Vector2(tiledobj.X + tiledobj.Width/2, tiledobj.Y + tiledobj.Height/2);
+                        Player.Location = new Vector2(tiledobj.X + tiledobj.Width / 2, tiledobj.Y + tiledobj.Height / 2);
                     }
-                    else if (tiledobj.Name.Equals("SpawnPortal")) {
-                        Portals.Add(new SpawnPortal() { 
-                            CreatureTypes = new Creature.Types[]{Creature.Types.SMALL, Creature.Types.MEDIUM}, 
-                            Location = new Vector2(tiledobj.X + tiledobj.Width/2, tiledobj.Y + tiledobj.Height/2), 
+                    else if (tiledobj.Name.Equals("SpawnPortal"))
+                    {
+                        Portals.Add(new SpawnPortal()
+                        {
+                            CreatureTypes = new Creature.Types[] { Creature.Types.SMALL, Creature.Types.MEDIUM },
+                            Location = new Vector2(tiledobj.X + tiledobj.Width / 2, tiledobj.Y + tiledobj.Height / 2),
                             Size = random.Next(1, 4),
                             isOpen = false
-                        });                    
+                        });
                     }
-                    else if (tiledobj.Name.Equals("Location")) { 
-                        if (tiledobj.Properties.ContainsKey("LocationType")) {
-                            Locations.Add(new Location() { 
-                                X = tiledobj.X + tiledobj.Width/2, Y=tiledobj.Y+tiledobj.Height/2
-                            
-                            };
+                    else if (tiledobj.Name.Equals("Location"))
+                    {
+                        if (tiledobj.Properties.ContainsKey("LocationType"))
+                        {
+                            Locations.Add(new Location()
+                            {
+                                X = tiledobj.X,
+                                Y = tiledobj.Y,
+                                Type = tiledobj.Properties["LocationType"],
+                                Width = tiledobj.Width,
+                                Height = tiledobj.Height,
+                            });
                         }
                     }
                 }
@@ -104,54 +123,15 @@ namespace LD27
          * World Update Function
          */
         public void Update(float time, GameTime gameTime) {
+            //var ticks = DateTime.Now.Ticks;
             if (previousUpdateTotalSeconds == 0) { previousUpdateTotalSeconds = gameTime.TotalGameTime.TotalSeconds; }
             Random random = new Random();
             double timeDelta = gameTime.TotalGameTime.TotalSeconds - previousUpdateTotalSeconds;
-            if ((time >= 10) && timeDelta > 0.030) {
-                this.Disaster = false;                
-                TerrorLevel += Creatures.Count;
-                // each open portal spawns creatures.                
-                Console.WriteLine("Time: {2}, Player Kills: {0} | Terrorlevel: {1}", Player.Kills, TerrorLevel, time);
-                //spawn cards
-                totalKills += Player.Kills;
-                Player.Kills = 0;
-
-                int openingPortalIndex = random.Next(0, this.Portals.Count-1);
-                this.Portals[openingPortalIndex].isOpen = true;
-                var p = this.Portals[openingPortalIndex];
-                Console.WriteLine("DOOOOM! at {0}, {1}", p.Location.X, p.Location.Y);
-                
-
-                /*foreach (var grp in map.ObjectGroups)
-                {
-                    if (grp.Name.Equals("hidden")) {
-                    //ObjectGroup grp = kvpair.Value;
-                        foreach (var tiledobj in grp.Objects)
-                        {
-                            tiledobj.
-                        }
-                    }
-                }*/
-
-                // new direction;
-                foreach (var creature in this.Creatures) {
-                    creature.Direction = random.Next(0, 360) * Math.PI / 180;
-                }
-
-                foreach (var portal in this.Portals) {
-                    if (portal.isOpen) {
-                        TerrorLevel += 1;
-                        if (Creatures.Count < 20)
-                        {
-                            Creatures.AddRange(portal.SpawnCreatures(Creatures.Count, TerrorLevel));
-
-                        } else {
-                            portal.Size += 0.1f;
-                        }
-                    }
-                }
+            if ((time >= 10) && timeDelta > 0.040) {
+                TenSecondUpdate(time, random);
             }
-            if (timeDelta > 0.025) {//40fps 
+
+            if (timeDelta > 0.040) {//25fps 
                 foreach (var creature in this.Creatures) {
                     if (creature.Type != Creature.Types.CIVILIAN && creature.Type != Creature.Types.PLAYER) { 
                         //move creature; pause just before deadline
@@ -175,12 +155,77 @@ namespace LD27
                 this.Portals = this.Portals.Where((p) => (!p.Destroyed)).ToList();
 
                 previousUpdateTotalSeconds = gameTime.TotalGameTime.TotalSeconds;
+                if (this.EndGame) {
+                    if (32 < Math.Abs(this.Viewport.X - this.X) && (32 < Math.Abs(this.Viewport.Y - this.Y))) {
+                        this.Forces.Clear();
+                        this.Creatures.Clear();
+                        this.Portals.Clear();
+                        this.Locations.Clear();
+                        LoadMap("BossFight.tmx");
+
+                    } 
+                }
+
             }
-            if (TerrorLevel == 100) {
-                System.Diagnostics.Debugger.Break();
+            if (TerrorLevel >= 100) {
+                Player.Health = 0;
+                Player.Set("TerrorDeath");
+                //System.Diagnostics.Debugger.Break();
             }
-            if (totalKills == 100) {
+            if (totalKills >= 80) {
                 EndGame = true;
+            }
+            //Console.WriteLine("WorldMap Update time: {0}", DateTime.Now.Ticks - ticks);
+        }
+
+        private void TenSecondUpdate(float time, Random random)
+        {
+           
+            TerrorLevel += Creatures.Count;
+            // each open portal spawns creatures.                
+            Console.WriteLine("Time: {2}, Player Kills: {0} | Terrorlevel: {1}", Player.Kills, TerrorLevel, time);
+            //spawn cards
+            totalKills += Player.Kills;
+            Player.Kills = 0;
+
+            int openingPortalIndex = random.Next(0, this.Portals.Count - 1);
+            this.Portals[openingPortalIndex].isOpen = true;
+            var p = this.Portals[openingPortalIndex];
+            Console.WriteLine("DOOOOM! at {0}, {1}", p.Location.X, p.Location.Y);
+
+
+            /*foreach (var grp in map.ObjectGroups)
+            {
+                if (grp.Name.Equals("hidden")) {
+                //ObjectGroup grp = kvpair.Value;
+                    foreach (var tiledobj in grp.Objects)
+                    {
+                        tiledobj.
+                    }
+                }
+            }*/
+
+            // new direction;
+            foreach (var creature in this.Creatures)
+            {
+                creature.Direction = random.Next(0, 360) * Math.PI / 180;
+            }
+
+            foreach (var portal in this.Portals)
+            {
+                if (portal.isOpen)
+                {
+                    TerrorLevel += 1;
+                    if (Creatures.Count < 20)
+                    {
+                        Creatures.AddRange(portal.SpawnCreatures(Creatures.Count, TerrorLevel));
+
+                    }
+                    else
+                    {
+                        portal.Size += 0.1f;
+                    }
+                }
             }
 
             time = 0;
@@ -191,6 +236,7 @@ namespace LD27
 
 
         public RenderTarget2D GetMapImage() {
+            //var ticks = DateTime.Now.Ticks;
             device.SetRenderTarget(renderTarget);
             //FIXME from tutorial, check if actually required.
             device.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
@@ -201,6 +247,7 @@ namespace LD27
             batch.End();
             batch.Dispose();
             device.SetRenderTarget(null);
+            //Console.WriteLine("WorldMap Draw time: {0}", DateTime.Now.Ticks - ticks);
             return renderTarget;
         }
 
@@ -265,6 +312,48 @@ namespace LD27
             return Out;
         }
 
-        
+        public static Vector2 GetMoveLocation(Vector2 vector, double angle, double distance)
+        {
+            // optimizations begin
+            if (distance<1) return vector;
+            if (angle == 0) {
+                return new Vector2(vector.X + (float)distance, vector.Y);
+            }
+            if (angle == Math.PI)
+            {
+                return new Vector2(vector.X - (float)distance, vector.Y);
+            }
+
+            if (angle == -Math.PI/2)
+            {
+                return new Vector2(vector.X, vector.Y + (float)distance);
+            }
+            if (angle == Math.PI / 2)
+            {
+                return new Vector2(vector.X, vector.Y + (float)distance);
+            }
+            //optimizations end;
+
+            float xpos = vector.X + (float)(Math.Cos(angle) * distance);
+            float ypos = vector.Y + (float)(Math.Sin(angle) * distance);
+            return new Vector2(xpos, ypos);
+
+        }
+
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+            
+        }
+        ~WorldMap() {
+            Dispose(false);
+        }
+        protected virtual void Dispose(bool Disposing) {
+            if (Disposing)
+            {
+                this.renderTarget.Dispose();
+                this.renderTarget = null;
+            }
+        }
     }
 }

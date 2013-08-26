@@ -49,7 +49,7 @@ namespace LD27
                 //type = Creature.Types.MEDIUM;
                 out_list.Add(new Creature() { 
                     Attack = 1+(int)type,
-                    Speed = 7 - (int) type,
+                    Speed = 9 - (int) type,
                     Location = this.Location, 
                     Type = type,
                     Range = 64+4*(int)type,

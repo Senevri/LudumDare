@@ -77,13 +77,9 @@ namespace LD27
             return new Vector2(xpos, ypos);
         
         }
-
-        public Vector2 GetMoveLocation(Vector2 vector, double angle, double distance)
+        public Vector2 GetMoveLocation(Vector2 v, double angle, double distance)
         {
-            float xpos = vector.X + (float)(Math.Cos(angle) * distance);
-            float ypos = vector.Y + (float)(Math.Sin(angle) * distance);
-            return new Vector2(xpos, ypos);
-
+            return WorldMap.GetMoveLocation(v, angle, distance);
         }
 
         public bool Move(double angle, double distance, WorldMap worldMap) {           
@@ -91,6 +87,8 @@ namespace LD27
             float ypos = Location.Y + (float)(Math.Sin(angle) * distance);
             return IfValidPathThenUpdateLocation(worldMap, xpos, ypos);
         }
+
+        
 
 
 
@@ -126,7 +124,7 @@ namespace LD27
             creature.Set("charging", creature.Speed);
             var distance = worldMap.GetDistance(creature.Location, worldMap.ConvertLocationToPixelPosition(worldMap.Player.Location));
             if (distance < (5 * creature.Range)) {
-                creature.Speed = 6;
+                creature.Speed = 12-(int)creature.Type;
 
                 creature.Direction = worldMap.GetAngle(creature.Location, worldMap.ConvertLocationToPixelPosition(worldMap.Player.Location));
                 if (distance < creature.Range) {

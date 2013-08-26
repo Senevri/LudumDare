@@ -11,7 +11,7 @@ namespace LD27
     {
         private Texture2D _spriteSheet;
         private GraphicsDevice device;
-        private RenderTarget2D renderTarget; // see if we can clone easily.
+       // private RenderTarget2D renderTarget; // see if we can clone easily.
         public int Current {get; set;}
         private int tileWidth;
         private int tileHeight;
@@ -113,24 +113,14 @@ namespace LD27
             this.GenerateVertices();
         }
 
-        /*public SpriteSheet(PositionedQuad pq) : base(pq)
-        {
-
-            this.Texture = pq.Texture;
-            this.Effect = pq.Effect;
-            this.Rotation = pq.Rotation;
-            this.Scale = pq.Scale;
-            this.ScaleY = pq.ScaleY;
-            this.Position = pq.Position;
-            this.Vertices = pq.Vertices;
-            this.columns = 1;
-            this.rows = 1;
-            this.tileWidth = pq.Texture.Width;
-            this.tileHeight = pq.Texture.Height;
-            this.tileCount = 1;
-            this.Initialize();
-        }*/
-
+        public void SetTileSize(int width, int height) {
+            this.tileHeight = height;
+            this.tileWidth = width;
+            this.columns = _spriteSheet.Width / width;
+            this.rows = _spriteSheet.Height / height;
+            this.tileCount = columns * rows;
+        }
+        
         public Color[] GetRectColors(Rectangle rect) { 
             Color[] sheet = new Color[_spriteSheet.Width * _spriteSheet.Height];
             _spriteSheet.GetData<Color>(sheet);
@@ -203,12 +193,13 @@ namespace LD27
             this.columns = 1;
             this.AnimationIndexes = new Dictionary<string, int[]>();
             this.tileCount = 64;
-            
-            PresentationParameters pp = device.PresentationParameters;
+
+            /*PresentationParameters pp = device.PresentationParameters;
             renderTarget = new RenderTarget2D(device, 
                 64, //pp.BackBufferWidth, 
                 64, //pp.BackBufferHeight, 
                 true, device.DisplayMode.Format, DepthFormat.Depth24);
+             * */
         }
 
         private void DefaultAnimationIndexing() {            
@@ -243,7 +234,7 @@ namespace LD27
 
         public bool isAnimated { get; set; }
 
-        internal RenderTarget2D GetTextureCopy()
+        /*internal RenderTarget2D GetTextureCopy()
         {
             this.device.SetRenderTarget(renderTarget);
             //FIXME from tutorial, check if actually required.
@@ -256,7 +247,7 @@ namespace LD27
             batch.Dispose();
             this.device.SetRenderTarget(null);
             return renderTarget;
-        }
+        }*/
     }
 
 }

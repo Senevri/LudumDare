@@ -36,6 +36,8 @@ namespace LD27
 
     class Attack : Force
     {
+        public float Speed { get; set; }
+        public float Direction { get; set; }
         public float Range { get; set; }
         public float Damage { get; set; }
         public float Duration { get; set; }
@@ -52,7 +54,7 @@ namespace LD27
         {
             _creature = null;
             _apply = this.Apply;
-            Duration = 20;
+            Duration = 20;           
         }
 
         public new void Apply() {
@@ -66,12 +68,14 @@ namespace LD27
                     //self._isApplied = true;
                     self.Remove = true;
                 }
+                this.Location = WorldMap.GetMoveLocation(this.Location, this.Direction, this.Speed);
                 return; 
             }
 
             if (WorldMap.GetDistance(self.Location, _creature.Location) <= self.Range)
             {
                 self._creature.Health -= Damage;
+                self._creature.Set("hurt");
                 if (self._creature.Health <= 0)
                 {
                     Creator.Kills += 1;

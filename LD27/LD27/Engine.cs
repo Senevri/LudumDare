@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.Text;
 
 namespace LD27
 {
-    class Engine
+    class Engine : IDisposable
     {
         private Microsoft.Xna.Framework.Graphics.GraphicsDevice GraphicsDevice;
         private Microsoft.Xna.Framework.Matrix viewMatrix;
@@ -22,6 +23,8 @@ namespace LD27
         private List<PositionedQuad> renderQuads;
         private Microsoft.Xna.Framework.Content.ContentManager Content;
         private List<SpriteSheet> sprites;
+
+        private Dictionary<string, SoundEffect> Sounds;
 
         public Vector3 Camera { get; set; }
 
@@ -58,6 +61,7 @@ namespace LD27
             this.textQuads = new List<PositionedQuad>();
             this.sprites = new List<SpriteSheet>();
             this.namedQuads = new Dictionary<string, PositionedQuad>();
+            this.Sounds = new Dictionary<string, SoundEffect>();
 
             aspect = GraphicsDevice.Viewport.AspectRatio;
 
@@ -91,6 +95,14 @@ namespace LD27
             Effect.DirectionalLight2.Enabled = false;
         }
 
+        public SoundEffectInstance PlaySound(string sound) {
+            if (!Sounds.ContainsKey(sound)) { return null; }
+            var instance = Sounds[sound].CreateInstance();
+            instance.Volume = 0.5f;
+            instance.Play();
+            return instance;
+        }
+
         private float  defaultScale = 64f / 480f;
 
         /**
@@ -108,6 +120,14 @@ namespace LD27
             Textures.Add("youmaspritesheet", Content.Load<Texture2D>("youmaspritesheet"));
             Textures.Add("tilesheet", Content.Load<Texture2D>("tilesheet"));
             Textures.Add("sfx", Content.Load<Texture2D>("specialeffects"));
+            Textures.Add("misc", Content.Load<Texture2D>("misctiles"));
+
+            Sounds.Add("hurt", Content.Load<SoundEffect>("Hit_Hurt"));
+            Sounds.Add("timer", Content.Load<SoundEffect>("Timer"));
+            Sounds.Add("attack", Content.Load<SoundEffect>("Laser_Shoot"));
+
+
+
             Effect.Texture = Textures["mapRender"];
 
             float testScale = 64f / (screenh);
@@ -135,6 +155,15 @@ namespace LD27
              */
             //storedQuads.Add(namedQuads["timer"]);
 
+            var misc = AddSpriteSheet(Textures["misc"], Vector2.Zero, false, false);
+            misc.SetTileSize(128, 128);
+            misc.Scale = 3*aspect / 12.5f;
+            misc.ScaleY = 3 / 8f;
+            misc.Delay = 0.1f;
+            misc.AnimationIndexes.Add("bigportal", Enumerable.Range(4, 4).ToArray());
+            misc.Animation = "bigportal";
+            misc.Rescale();
+            namedQuads.Add("misc", misc);
 
             var player = AddSpriteSheet(Textures["playerspritesheet"], WorldMap.Player.Location);
             player.AnimationIndexes.Add("attack", Enumerable.Range(16, 5).ToArray());
@@ -157,9 +186,9 @@ namespace LD27
             namedQuads.Add("timer", timer);
 
             var sfx = AddSpriteSheet(Textures["sfx"], Vector2.Zero, false, false);
-            sfx.Delay = 0.250f;
-            sfx.AnimationIndexes.Add("row1", new int[] { 0, 1, 2 });
-            sfx.AnimationIndexes.Add("row2", new int[] { 8, 9 });
+            sfx.Delay = 0.200f;
+            sfx.AnimationIndexes.Add("row1", Enumerable.Range(0, 7).ToArray());
+            sfx.AnimationIndexes.Add("row2", Enumerable.Range(8,6).ToArray());
             sfx.AnimationIndexes.Add("bloody", Enumerable.Range(16, 5).ToArray());
             namedQuads.Add("sfx", sfx);
 
@@ -210,6 +239,7 @@ namespace LD27
 
         internal void Draw(GraphicsDevice GraphicsDevice, Microsoft.Xna.Framework.GameTime gameTime)
         {
+            //var ticks = DateTime.Now.Ticks;
             int screenw = GraphicsDevice.Viewport.Bounds.Width;
             int screenh = GraphicsDevice.Viewport.Bounds.Height;            
             GraphicsDevice.SetVertexBuffer(null);
@@ -304,6 +334,25 @@ namespace LD27
                  new TexturedQuad(defaultScale) { Texture = enemies.Texture }, v1) { Show = true });                                
             }
 
+            foreach (var loc in WorldMap.Locations) {
+                if (WorldMap.EndGame && loc.Type == "EndGame") {
+                    var v = PixelPositionToVector2((int)((loc.X - WorldMap.X) + loc.Width/2), (int)((loc.Y - WorldMap.Y) + loc.Height/2));
+                    var misc = (namedQuads["misc"] as SpriteSheet);
+                    misc.Animation = "bigportal";
+                    if (misc.AllowNextFrame(gameTime.TotalGameTime.TotalSeconds))
+                    {
+                        misc.Next(misc.Texture);
+                    }
+                    else
+                    {
+                        misc.SetTileToCurrent(GraphicsDevice);
+                    }
+                    renderQuads.Add(new PositionedQuad(
+                            new TexturedQuad(defaultScale*3) { Texture = misc.Texture }, v) { Show = true });
+                    }
+            }
+
+
             var sfx = (namedQuads["sfx"] as SpriteSheet);
             sfx.isAnimated = true;
             //Console.WriteLine("sfx count: {0}, creature count: {1}", WorldMap.Forces.Count, WorldMap.Creatures.Count);
@@ -340,6 +389,8 @@ namespace LD27
                     force.Remove = true;
                 }
             }
+
+           
 
 
             int i = 0;
@@ -393,8 +444,8 @@ namespace LD27
                     }                    
                 }
             }
-            
-            
+
+            //Console.WriteLine("Engine Draw time: {0}", DateTime.Now.Ticks - ticks);
         }
 
         internal PositionedQuad Write(string text, int screenx, int screeny, Vector3 rotation, float scale = 1) {
@@ -470,6 +521,7 @@ namespace LD27
          */
         internal void Update(GameTime gameTime)
         {
+            //var ticks = DateTime.Now.Ticks;
             this.viewMatrix = Matrix.CreateLookAt(Camera, Target, Vector3.Up);
             this.worldMatrix = Matrix.CreateWorld(Vector3.Backward, Vector3.Forward, Vector3.Up);
             //this.projectionMatrix = Matrix.CreatePerspective(GraphicsDevice.Viewport.AspectRatio, 1.0f, 0.5f, 100.0f);
@@ -493,7 +545,6 @@ namespace LD27
             //{
 
             //}
-            namedQuads["map"].Texture = WorldMap.GetMapImage();
             namedQuads["map"].Position = new Vector2(Camera.X, Camera.Y);
             namedQuads["player"].Position = new Vector2(Camera.X, Camera.Y);
             namedQuads["timer"].Position = new Vector2(Camera.X, Camera.Y + 0.8f);
@@ -508,11 +559,46 @@ namespace LD27
             if (seconds >= 10.0f)
             {
                 prevSeconds = (float)gameTime.TotalGameTime.TotalSeconds;
+                PlaySound("timer");
             }
+
+            //if (null != vertexBuffer) { vertexBuffer.Dispose(); vertexBuffer = null;  }
             
             vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, this.renderQuads.Count * 6, BufferUsage.WriteOnly);
-            
 
+            //Console.WriteLine("Engine Update time: {0}", DateTime.Now.Ticks - ticks);
+            if (WorldMap.Player.Is("hurt")) {
+                PlaySound("hurt");
+                WorldMap.Player.Set("hurt", 0);
+            }
+            if (WorldMap.Forces.Count > 0) {
+                if (null != attackSound)
+                {
+                    if (attackSound.State == SoundState.Stopped) {                        
+                        attackSound.Play();
+                    }
+                }
+                else {
+                    attackSound = PlaySound("attack");
+                }
+            }
+        }
+
+        SoundEffectInstance attackSound=null;
+
+        public void Dispose() {
+            Dispose(true);
+        }
+
+        ~Engine() {
+            Dispose(false);
+        }
+
+        protected virtual void Dispose(bool Disposing) {
+            if (Disposing) {
+                this.vertexBuffer.Dispose();
+                this.vertexBuffer = null;
+            }
         }
 
     }
