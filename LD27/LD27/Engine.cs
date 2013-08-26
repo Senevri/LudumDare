@@ -214,6 +214,9 @@ namespace LD27
 
         float newAngle = 0;
 
+        /*
+         * Draw
+        */
         internal void Draw(GraphicsDevice GraphicsDevice, Microsoft.Xna.Framework.GameTime gameTime)
         {
             //var ticks = DateTime.Now.Ticks;
@@ -230,13 +233,15 @@ namespace LD27
             delta = gameTime.TotalGameTime.TotalSeconds;
 
             namedQuads["map"].Texture = WorldMap.GetMapImage();
-            
+              
             foreach (var portal in WorldMap.Portals) {                
                 var v1 = PixelPositionToVector2((int)(portal.Location.X-WorldMap.X), (int)(portal.Location.Y-WorldMap.Y));
                 if (portal.isOpen) {                    
                     sprites["tiles"].AddAnimation("portal", v1);                     
                 }
+                
             }
+            sprites["tiles"].PruneUnusedAnimations(WorldMap.Portals.Select((i) => (i.ID)));
 
             //renderQuads.AddRange(sprites.Values);
             if (WorldMap.Player.Is("attacking")) {
@@ -287,10 +292,11 @@ namespace LD27
                 }
                 if (!type.Equals(string.Empty))
                 {
-                    enemies.Animations.Add(enemies.AnimationDefinitions[type].PositionCopy(v1));
+                    enemies.AddAnimation(type, enemy.Location, enemy.ID);
                 }                
                 
             }
+            sprites["enemies"].PruneUnusedAnimations(WorldMap.Creatures.Select((i) => (i.ID)));
 
             foreach (var loc in WorldMap.Locations) {
                 if (WorldMap.EndGame && loc.Type == "EndGame") {
@@ -299,6 +305,7 @@ namespace LD27
                     misc.AddAnimation("portal", v);                    
                     }
             }
+            sprites["misc"].PruneUnusedAnimations(WorldMap.Locations.Select((i) => (i.ID)));
 
             var sfx = sprites["sfx"];
             //Console.WriteLine("sfx count: {0}, creature count: {1}", WorldMap.Forces.Count, WorldMap.Creatures.Count);
@@ -322,11 +329,12 @@ namespace LD27
                         break;
                 }
             
-                sfx.Animations.Add(sfx.AnimationDefinitions[type].PositionCopy(v));
+                sfx.AddAnimation(type, v, force.ID);
                 if (force.IsApplied) {
                     force.Remove = true;
                 }
             }
+            sprites["sfx"].PruneUnusedAnimations(WorldMap.Forces.Select((i) => (i.ID)));
           
             verts.AddRange(namedQuads["map"].Vertices);
             

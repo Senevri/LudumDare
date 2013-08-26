@@ -70,15 +70,20 @@ namespace LD27
 
         public Dictionary<string, Animation> AnimationDefinitions;
 
-        public List<Animation> Animations;
+        private Dictionary<int, Animation> _animations;
+        public List<Animation> Animations
+        {
+            get
+            { return _animations.Values.ToList(); }
+        }
 
 
 
         public string Animation { get { return _currentAnimation; } 
             set { 
                 _currentAnimation = value;
-                this.Animations.Clear();                
-                this.Animations.Add(this.AnimationDefinitions[_currentAnimation].Copy());
+                this._animations.Clear();                
+                this._animations.Add(0, this.AnimationDefinitions[_currentAnimation].Copy());
                 this.Animations.Last().DelaySeconds = (this.Delay > 0) ? Delay : 0.5f;
             } 
         }
@@ -189,7 +194,7 @@ namespace LD27
 
         private void Initialize() {
             this.AnimationDefinitions = new Dictionary<string, Animation>();
-            this.Animations = new List<Animation>();
+            this._animations = new Dictionary<int, Animation>();
             this.Current = 0;
             this.rows = 1; // always 1 row
             this.columns = 1;
@@ -220,9 +225,32 @@ namespace LD27
             return AnimationDefinitions.Last().Value;
         }
 
-        internal void AddAnimation(string p, Vector2 v1)
+        internal void AddAnimation(string p, Vector2 v1, int id = -1)
         {
-            this.Animations.Add(this.AnimationDefinitions[p].PositionCopy(v1));
+            if (-1 == id) { id = this.Animations.Count; }
+            // recycle
+            if (this._animations.ContainsKey(id))
+            {
+                this._animations[id].Position = v1;
+            }
+            else
+            {
+                this._animations.Add(id, this.AnimationDefinitions[p].PositionCopy(v1));
+            }
+        }
+
+        internal void PruneUnusedAnimations(IEnumerable<int> enumerable)
+        {
+            if (enumerable.IsAny())
+            {
+                //this._animations = enumerable.ToDictionary((i) => (i), (i) => (this._animations[i]));
+                this._animations = this._animations.Where((kv)=>(enumerable.Contains(kv.Key))).ToDictionary(x => x.Key, x => x.Value);
+                                
+            }
+            else 
+            {
+                this._animations.Clear();
+            }
         }
     }
 
