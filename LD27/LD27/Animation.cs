@@ -7,16 +7,22 @@ namespace LD27
 {
     class Animation
     {
+        public int ID { get; set; }
         public int[] FrameIndexes { get; set; }
         public float DelaySeconds { get; set; }
-        public int CurrentFrame { get; set; }
+        public int CurrentFrameIndex { get; set; }
+        public int CurrentFrame { 
+            get {
+                return FrameIndexes[CurrentFrameIndex];
+            } 
+        }
         public bool Playing { get; set; }
         public bool Loop { get; set; }
 
         private float _lastFrameShown;
 
         public Animation() {
-            CurrentFrame = 0;
+            CurrentFrameIndex = 0;
             Loop = true;
             DelaySeconds = 0.200f;
         }
@@ -26,26 +32,26 @@ namespace LD27
                 _lastFrameShown = gameTimeTotalSeconds;
                 return getNextIndex();
             }
-            return FrameIndexes[CurrentFrame];
+            return FrameIndexes[CurrentFrameIndex];
         }
 
         public int getNextIndex(int i=0) {
-            if (CurrentFrame == FrameIndexes.Count() - 1) {
+            if (CurrentFrameIndex == FrameIndexes.Count() - 1) {
                 if (Loop) {
-                    CurrentFrame = 0;
+                    CurrentFrameIndex = 0;
                 }
             } else {
-                CurrentFrame++;
+                CurrentFrameIndex++;
             }
-            return FrameIndexes[CurrentFrame];
+            return FrameIndexes[CurrentFrameIndex];
         }
 
         public Microsoft.Xna.Framework.Vector2 Position { get; set; }
 
         public Animation Copy() {
-            var newAnimation = new Animation() { DelaySeconds = this.DelaySeconds, CurrentFrame = this.CurrentFrame, Loop =this.Loop, Position = this.Position};
+            var newAnimation = new Animation() { DelaySeconds = this.DelaySeconds, /*CurrentFrame = this.CurrentFrame,*/ Loop =this.Loop, Position = this.Position};
             newAnimation.FrameIndexes = new int[FrameIndexes.Length];
-            Array.Copy(FrameIndexes, newAnimation.FrameIndexes, 0);
+            Array.Copy(FrameIndexes, newAnimation.FrameIndexes, FrameIndexes.Length);
             return newAnimation;
         }
 

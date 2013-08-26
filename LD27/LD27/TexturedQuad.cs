@@ -23,7 +23,7 @@ namespace LD27
             if (ScaleY == 0) {
                 ScaleY = ScaleX;
             }
-            GenerateVertices();
+            //GenerateVertices();
         }
 
         public TexturedQuad(int x, int y, int w, int h) {
@@ -63,12 +63,12 @@ namespace LD27
 
         public void GenerateVerticesWithSubsection(int x, int y, int width, int height) {            
             //0.0f
-            float xp = x / Texture.Width;
-            float yp = y / Texture.Height;
+            float xp = (float)x / Texture.Width;
+            float yp = (float)y / Texture.Height;
 
             // 1.0f
-            float xw = (x + width) / Texture.Width;
-            float yw = (y + height) / Texture.Height;
+            float xw = (float)(x + width) / Texture.Width;
+            float yw = (float)(y + height) / Texture.Height;
             Vertices = new VertexPositionNormalTexture[6];
             Vertices[0] = genVertice(-1.0f, 1.0f, 0, xp, yp);
             Vertices[1] = genVertice(1.0f, 1.0f, 0, xw, yp);

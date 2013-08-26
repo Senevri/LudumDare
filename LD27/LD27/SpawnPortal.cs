@@ -8,6 +8,10 @@ namespace LD27
 {
     class SpawnPortal
     {
+        public static int lastID;
+        public int ID { get; set; }
+
+        
         public Vector2 Location { get; set; }
         public Creature.Types[] CreatureTypes { get; set;}
         public float Size { get; set; }
@@ -16,6 +20,9 @@ namespace LD27
 
         internal List<Creature> SpawnCreatures(int creaturecount = 0, int terrorlevel = 0)
         {
+            ID = SpawnPortal.lastID + 1;
+            SpawnPortal.lastID = ID;
+        
             this.CreatureTypes = new Creature.Types[]{
                     Creature.Types.MEDIUM,
                     };

@@ -104,8 +104,7 @@ namespace LD27
                 this.tileHeight = texture.Height;
             }
             this.tileCount = 1;
-            this.GenerateTiles();
-            
+            this.GenerateTiles();            
         }
 
         public SpriteSheet(Texture2D texture, 
@@ -123,7 +122,7 @@ namespace LD27
             SetTileSize(tileheight, tilewidth);
                         
             //this.Rescale(this.tileHeight/480);            
-            this.GenerateTiles();
+            //this.GenerateTiles();
         }
 
 
@@ -142,17 +141,17 @@ namespace LD27
             this.GenerateTiles();
         }
 
-        private void GenerateTiles()
+        public void GenerateTiles()
         {
             this.Tiles = new TexturedQuad[tileCount];
             for (var y = 0; y < rows; y++) {
-                for (var x = 0; x<columns; x++) {            
+                for (var x = 0; x < columns; x++) {            
                     var tq=new TexturedQuad(){
-                        ScaleX = (this.ScaleX / columns),
+                        ScaleX = (this.ScaleX / columns/this.ScaleX),
                         ScaleY = (this.ScaleY / rows),
                         Texture = this._spriteSheet
                     };
-                    tq.GenerateVerticesWithSubsection(x*tileWidth, y*tileHeight, (x+1)*tileWidth, (y+1)*tileHeight);
+                    tq.GenerateVerticesWithSubsection(x*tileWidth, y*tileHeight, tileWidth, tileHeight);
                     this.Tiles[x + y * rows] = tq;
                     
                 }                
@@ -209,7 +208,7 @@ namespace LD27
                 outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationY(Rotation.Y));
                 outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationZ(Rotation.Z));                    
                  */
-                outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateTranslation(new Vector3(Position.X, Position.Y, -1.0f)));                                    
+                outVerts[i].Position = Vector3.Transform(Tile.Vertices[i].Position, Matrix.CreateTranslation(new Vector3(Position.X, Position.Y, -1.0f)));                                    
             }
             return outVerts;
         }
@@ -219,6 +218,11 @@ namespace LD27
         {
             this.AnimationDefinitions.Add(p1, new Animation() { FrameIndexes = p2, Loop = loop});
             return AnimationDefinitions.Last().Value;
+        }
+
+        internal void AddAnimation(string p, Vector2 v1)
+        {
+            this.Animations.Add(this.AnimationDefinitions[p].PositionCopy(v1));
         }
     }
 

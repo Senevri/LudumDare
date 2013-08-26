@@ -12,6 +12,7 @@ namespace LD27
      */
     class Creature
     {
+        public static int lastID;
         public enum Types {CIVILIAN, PLAYER, SMALL, MEDIUM, LARGE, BEWARE}
         public Vector2 Location { get; set; }
         public Types Type { get; set; }
@@ -33,6 +34,8 @@ namespace LD27
        // and lost my train of thought.
 
         public Creature() {
+            this.ID = lastID + 1;
+            Creature.lastID = this.ID;
             this.Speed = 1f;
             this._properties = new Dictionary<string, float>();
         }

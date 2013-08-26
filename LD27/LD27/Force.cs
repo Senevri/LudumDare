@@ -8,6 +8,8 @@ namespace LD27
 {
     class Force
     {
+        public static int lastID;
+        public int ID { get; set; } 
         public enum Visuals { Test, Test2, Bloody }
         protected bool _isApplied;
         public bool IsApplied { get {
@@ -23,6 +25,8 @@ namespace LD27
         public ApplyFunction _apply {get; set;} 
 
         public Force() {
+            ID = Force.lastID + 1;
+            Force.lastID = ID;
             _isApplied = false;
         }
 

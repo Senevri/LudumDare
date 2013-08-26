@@ -15,12 +15,8 @@ namespace LD27
         private Microsoft.Xna.Framework.Matrix projectionMatrix;
         private Microsoft.Xna.Framework.Matrix worldMatrix;
         private VertexBuffer vertexBuffer;
-
-
-        private List<PositionedQuad> storedQuads;
-
+        
         private Dictionary<string, PositionedQuad> namedQuads;
-        private List<PositionedQuad> renderQuads;
         private Microsoft.Xna.Framework.Content.ContentManager Content;
         private Dictionary<string, SpriteSheet> sprites;
 
@@ -56,8 +52,6 @@ namespace LD27
 
         private void Initialize()
         {            
-            this.renderQuads = new List<PositionedQuad>();
-            this.storedQuads = new List<PositionedQuad>();
             this.textQuads = new List<PositionedQuad>();
             this.sprites = new Dictionary<string, SpriteSheet>();
             this.namedQuads = new Dictionary<string, PositionedQuad>();
@@ -79,7 +73,7 @@ namespace LD27
             Textures = new Dictionary<string, Texture2D>();
             Camera = new Vector3(0, 0, 1);
             Target = new Vector3(0, 0, -1);
-            vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, this.renderQuads.Count * 6, BufferUsage.WriteOnly);
+            vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, this.namedQuads.Count * 6, BufferUsage.WriteOnly);
         }
 
         public Vector2 GetScreenUpperLeft() {
@@ -137,37 +131,38 @@ namespace LD27
             namedQuads.Add("map", new PositionedQuad(aspect, 1)
             {
                 Texture = Textures["mapRender"],
-                Position = new Vector2(Camera.X, Camera.Y)
+                Position = new Vector2(Camera.X, Camera.Y),
+                Show = true
             });
-
-            
-
-            
-            storedQuads.Add(namedQuads["map"]);
-            
+                                    
             var misc = AddSpriteSheet("misc", Textures["misc"], Vector2.Zero, false, false);
             misc.SetTileSize(128, 128);
             misc.ScaleX = 3 * aspect;
             misc.ScaleY = 3f;
             misc.Delay = 0.1f;
             misc.AnimationDefinitions.Add("bigportal", new Animation(){FrameIndexes = Enumerable.Range(4, 4).ToArray()});
-            misc.Animations.Add(misc.AnimationDefinitions.First().Value.Copy());
+            //misc.Animations.Add(misc.AnimationDefinitions.First().Value.Copy());
             
             
             var player = AddSpriteSheet("player", Textures["playerspritesheet"], WorldMap.Player.Location);
             player.DefineAnimation("idle", new int[] { 0, 1 });
             player.DefineAnimation("attack", Enumerable.Range(16, 5).ToArray(), false);
-            player.Animation = "attack";
+            //player.Animation = "attack";
             
-            AddSpriteSheet("tiles", Textures["tilesheet"], Vector2.Zero, false, false);
+            var tiles = AddSpriteSheet("tiles", Textures["tilesheet"], Vector2.Zero, false, false);
+            tiles.DefineAnimation("test", Enumerable.Range(0, 64).ToArray());
+            tiles.DefineAnimation("portal", new int[] { 8 });
+            //tiles.Animation = "test";
+            
 
             var enemies = AddSpriteSheet("enemies", Textures["youmaspritesheet"], Vector2.Zero, false, false);
             enemies.Delay = 0.5f;
             enemies.DefineAnimation ("small", new int[] { 0, 1});
             enemies.DefineAnimation("medium", new int[] { 8, 9 });
             enemies.DefineAnimation("large", new int[] { 16, 17 });
-            enemies.DefineAnimation("itcomes", new int[] { 24, 25, 26 });                        
-         
+            enemies.DefineAnimation("itcomes", new int[] { 24, 25, 26 });
+            enemies.DefineAnimation("test", Enumerable.Range(0, 64).ToArray());
+            enemies.Animation  ="test";
             
             var timer = AddSpriteSheet("timer", Textures["bmpFont"], PixelPositionToVector2(screenw / 2, 32));
             
@@ -177,16 +172,13 @@ namespace LD27
             sfx.DefineAnimation("row2", Enumerable.Range(8,6).ToArray());
             sfx.DefineAnimation("bloody", Enumerable.Range(16, 5).ToArray());
             sfx.AnimationDefinitions["bloody"].DelaySeconds = 0.200f;
+            //sfx.Animation = "bloody";
 
             
             timer.DefineAnimation("timer", Enumerable.Range(32, 10).ToArray());
             System.Diagnostics.Debug.Assert(timer.AnimationDefinitions["timer"].FrameIndexes.Contains(41));
             timer.Delay = 1f;
-            timer.Animation = "timer";
-            
-            
-
-            //storedQuads.AddRange(sprites);
+            timer.Animation = "timer";            
         }
         
 
@@ -194,14 +186,19 @@ namespace LD27
         {
             //spritesheet is by default a 8x8 grid, so.... 
             // 
-            sprites.Add(name, new SpriteSheet(texture, GraphicsDevice)); // , 64, 64, 8, aspect, 1           
+            sprites.Add(name, new SpriteSheet(texture, GraphicsDevice) { 
+                //ScaleX = aspect, 
+                ScaleX = aspect*defaultScale*8,
+                ScaleY = 1*defaultScale*8
+            }); // , 64, 64, 8, aspect, 1           
             var sprite = sprites.Values.Last();
-            sprite.DefineAnimation("test", new int[] { 0, 1 });
-            sprite.DefineAnimation("test1", new int[] { 9 });
+            sprite.GenerateTiles();
+            sprite.DefineAnimation("default", new int[] { 0, 1 });
+            //sprite.DefineAnimation("test1", new int[] { 9 });
             if (show)
             {
                 sprite.Animation = sprite.AnimationDefinitions.Keys.First();
-            }
+            }            
             return sprite;
         }
 
@@ -226,27 +223,18 @@ namespace LD27
             List<VertexPositionNormalTexture> verts = new List<VertexPositionNormalTexture>();
             
             float seconds = (float)gameTime.TotalGameTime.TotalSeconds - prevSeconds;            
-
-            //renderQuads.Add((namedQuads["timer"] as SpriteSheet));
-
             if (seconds > 10.0f)
             {
                 prevSeconds = (float)gameTime.TotalGameTime.TotalSeconds;
             }
             delta = gameTime.TotalGameTime.TotalSeconds;
 
-            var tiles = sprites["tiles"];
-            
-            // get tile 8
-            
-            // get correct tile
             namedQuads["map"].Texture = WorldMap.GetMapImage();
             
-            foreach (var portal in WorldMap.Portals) {
-                
+            foreach (var portal in WorldMap.Portals) {                
                 var v1 = PixelPositionToVector2((int)(portal.Location.X-WorldMap.X), (int)(portal.Location.Y-WorldMap.Y));
-                if (portal.isOpen) {
-                    renderQuads.Add(new PositionedQuad(defaultScale) { Show = true, Texture = tiles.Tiles[8].Texture, Position = v1 });                                
+                if (portal.isOpen) {                    
+                    sprites["tiles"].AddAnimation("portal", v1);                     
                 }
             }
 
@@ -300,21 +288,7 @@ namespace LD27
                 if (!type.Equals(string.Empty))
                 {
                     enemies.Animations.Add(enemies.AnimationDefinitions[type].PositionCopy(v1));
-                }
-                /*
-                if (enemies.AllowNextFrame(gameTime.TotalGameTime.TotalSeconds))
-                {
-                    enemies.Next(enemies.Texture);
-                }
-                else
-                {
-                    enemies.SetTileToCurrent(GraphicsDevice);
-                }*/
-                /*Color[] bits = new Color[enemies.Texture.Width * enemies.Texture.Height];
-                 *  var copy = new Texture2D(GraphicsDevice, enemies.Texture.Width, enemies.Texture.Height);
-                 *  enemies.Texture.GetData<Color>(bits);                 
-                 *  copy.SetData<Color>(bits);
-                */
+                }                
                 
             }
 
@@ -322,20 +296,9 @@ namespace LD27
                 if (WorldMap.EndGame && loc.Type == "EndGame") {
                     var v = PixelPositionToVector2((int)((loc.X - WorldMap.X) + loc.Width/2), (int)((loc.Y - WorldMap.Y) + loc.Height/2));
                     var misc = sprites["misc"];
-                    misc.Animation = "bigportal";
-                    /*
-                    if (misc.AllowNextFrame(gameTime.TotalGameTime.TotalSeconds))
-                    {
-                        misc.Next(misc.Texture);
-                    }
-                    else
-                    {
-                        misc.SetTileToCurrent(GraphicsDevice);
-                    }*/
-                    //renderQuads.Add(new PositionedQuad(defaultScale*3){ Show = true, Texture=misc.Texture = misc.Texture, Position = v});
+                    misc.AddAnimation("portal", v);                    
                     }
             }
-
 
             var sfx = sprites["sfx"];
             //Console.WriteLine("sfx count: {0}, creature count: {1}", WorldMap.Forces.Count, WorldMap.Creatures.Count);
@@ -358,43 +321,22 @@ namespace LD27
                         sfx.Animation = string.Empty;
                         break;
                 }
-                /*if (sfx.AllowNextFrame(gameTime.TotalGameTime.TotalSeconds))
-                {
-                    sfx.Next(sfx.Texture);
-                }
-                else
-                {
-                    sfx.SetTileToCurrent(GraphicsDevice);
-                }*/
-                //renderQuads.Add(new PositionedQuad(defaultScale){ Show = true, Texture = sfx.Texture, Position = v });
-
+            
                 sfx.Animations.Add(sfx.AnimationDefinitions[type].PositionCopy(v));
                 if (force.IsApplied) {
                     force.Remove = true;
                 }
             }
-
-           
-
-
-            int i = 0;
-            for (i=0; i<renderQuads.Count; i++) {
-                var quad = renderQuads[i];                
-                /*if (i == 1)
-                {
-                    newAngle = (float)(newAngle + (Math.PI / (180 * 4)));
-                    if (newAngle >= Math.PI * 2)
-                    {
-                        newAngle = 0;
-                    }
-                    renderQuads[i].Rotation = new Vector3(0, newAngle, 0);
-                }*/
-
-                verts.AddRange(quad.Vertices);
+          
+            verts.AddRange(namedQuads["map"].Vertices);
+            
+            foreach (var sprite in sprites.Values) {
+                foreach (var anim in sprite.Animations) {
+                    var tile = sprite.GetPositionedTile(sprite.Tiles[anim.getNextAllowedIndex((float)gameTime.TotalGameTime.TotalSeconds)], anim.Position);
+                    verts.AddRange(tile);
+                }
             }
-
-            //vertexBuffer.SetData(positionedQuads.SelectMany((q) => (q.Vertices)).ToArray());   
-         
+            
             vertexBuffer.SetData(verts.ToArray());
 
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
@@ -408,39 +350,37 @@ namespace LD27
                 this.WorldMap.Disaster = true;
                 seconds = 10;
                 //sprites["timer"].isAnimated = false;
-            }
-            foreach (var quad in renderQuads)
+            }            
+
+            foreach (var quad in namedQuads.Values)
             {
                 if (quad.Show)
                 {
-                    Effect.Texture = null;
-                    Effect.Texture = quad.Texture;
-                    foreach (EffectPass pass in Effect.CurrentTechnique.Passes)
-                    {
-                        pass.Apply();
-                        GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, quad.Vertices, 0, 2);
-                    }                                        
-                }
-            }
-            foreach (var sheet in sprites.Values) {
-                foreach (var anim in sheet.Animations) {
-                    int tileindex = anim.getNextAllowedIndex((float)gameTime.TotalGameTime.TotalSeconds);
-                    Effect.Texture = sheet.Sheet;
-                    foreach (EffectPass pass in Effect.CurrentTechnique.Passes)
-                    {
-                        pass.Apply();
-                        GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(
-                            PrimitiveType.TriangleList, 
-                            sheet.GetPositionedTile(sheet.Tiles[tileindex], anim.Position),
-                            0, 2);
-                    }                                        
+                    RenderVertices(GraphicsDevice, quad.Texture, quad.Vertices);
                 }
             }
 
+            foreach (var sheet in sprites.Values) {
+                foreach (var anim in sheet.Animations)
+                {                    
+                    RenderVertices(GraphicsDevice, sheet.Sheet, sheet.GetPositionedTile(sheet.Tiles[anim.CurrentFrame], anim.Position));
+                }
+            }
 
             //Console.WriteLine("Engine Draw time: {0}", DateTime.Now.Ticks - ticks);
-        }
+        }        
 
+        private void RenderVertices(Microsoft.Xna.Framework.Graphics.GraphicsDevice GraphicsDevice,Texture2D texture2D,VertexPositionNormalTexture[] vertices)
+        {
+ 	        Effect.Texture = null;
+            Effect.Texture = texture2D;
+            foreach (EffectPass pass in Effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, vertices, 0, 2);
+            }
+        } 
+        
         
         private void SetupEffect()
         {
@@ -467,18 +407,7 @@ namespace LD27
 
             int screenw = GraphicsDevice.Viewport.Bounds.Width;
             int screenh = GraphicsDevice.Viewport.Bounds.Height;            
-            
-
-            renderQuads.Clear();                        
-            
-            //WorldMap.GetMapImage().GetData<Color>(mapdata);
-            //Textures["mapRender"].SetData<Color>(mapdata);
-            //var maptexture = Textures["mapRender"];
-            //var texture = WorldMap.GetMapImage();
-            //Effect.Texture = texture;
-            PositionedQuad[] quads = new PositionedQuad[storedQuads.Count];
-            storedQuads.CopyTo(quads);
-            renderQuads = quads.ToList();
+                        
             //if (gameTime.TotalGameTime.TotalSeconds - delta > 0.1)
             //{
 
@@ -505,8 +434,12 @@ namespace LD27
             }
 
             //if (null != vertexBuffer) { vertexBuffer.Dispose(); vertexBuffer = null;  }
-            
-            vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, this.renderQuads.Count * 6, BufferUsage.WriteOnly);
+            var quadCount = this.namedQuads.Count;
+            foreach(var sprite in sprites) {
+                quadCount += sprite.Value.Animations.Count;
+            }
+
+            vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, quadCount * 6, BufferUsage.WriteOnly);
 
             //Console.WriteLine("Engine Update time: {0}", DateTime.Now.Ticks - ticks);
             if (WorldMap.Player.Is("hurt")) {
