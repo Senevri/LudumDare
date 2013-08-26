@@ -13,8 +13,11 @@ namespace LD27
         public Vector3 Rotation { get; set; }
         //public Microsoft.Xna.Framework.Graphics.Texture2D Texture { get; set; }
         private VertexPositionNormalTexture[] _vertices;
+        private float aspect;
+        private int p;
         public new Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] Vertices {
             get {
+                if (this._vertices == null) { GenerateVertices(); };
                 VertexPositionNormalTexture[] outVerts = new VertexPositionNormalTexture[6];
                 for (int i = 0; i<_vertices.Length; i++) {                    
                     outVerts[i].TextureCoordinate = _vertices[i].TextureCoordinate;
@@ -46,8 +49,45 @@ namespace LD27
             Vertices = quad.Vertices;
             Position = position;
             Show = true;
-            Scale = quad.Scale;
+            ScaleX = quad.ScaleX;
             ScaleY = quad.ScaleY;
+            GenerateVertices();
+        }
+
+        public PositionedQuad(float scale,  float scaley=1)
+        {
+            // TODO: Complete member initialization
+            this.ScaleX = scale;
+            this.ScaleY = scale;
+            if (ScaleY == 0)
+            {
+                ScaleY = ScaleX;
+            }
+            GenerateVertices();
+        }
+        public PositionedQuad(Texture2D texture, float scale, float scaley = 1)
+        {
+            // TODO: Complete member initialization
+            this.Texture = Texture;
+            this.ScaleX = scale;
+            this.ScaleY = scale;
+            if (ScaleY == 0)
+            {
+                ScaleY = ScaleX;
+            }
+            GenerateVertices();
+        }
+
+        protected new void GenerateVertices()
+        {
+            _vertices = new VertexPositionNormalTexture[6];
+            _vertices[0] = genVertice(-1.0f, 1.0f, 0, 0.0f, 0.0f);
+            _vertices[1] = genVertice(1.0f, 1.0f, 0, 1.0f, 0.0f);
+            _vertices[2] = genVertice(-1.0f, -1.0f, 0, 0.0f, 1.0f);
+
+            _vertices[3] = genVertice(-1.0f, -1.0f, 0, 0.0f, 1.0f);
+            _vertices[4] = genVertice(1.0f, 1.0f, 0, 1.0f, 0.0f);
+            _vertices[5] = genVertice(1.0f, -1.0f, 0, 1.0f, 1.0f);
         }
 
         

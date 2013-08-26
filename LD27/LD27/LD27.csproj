@@ -35,6 +35,7 @@
     <ApplicationIcon>Icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Animation.cs" />
     <Compile Include="Creature.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="External\Tiled.cs" />

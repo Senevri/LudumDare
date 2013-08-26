@@ -7,7 +7,11 @@ using System.Text;
 
 namespace LD27
 {
-    class SpriteSheet : PositionedQuad    
+    /**
+     * FIXME: Combines spritesheet with animationmanager.
+     */
+
+    class SpriteSheet 
     {
         private Texture2D _spriteSheet;
         private GraphicsDevice device;
@@ -18,12 +22,24 @@ namespace LD27
         private int columns;
         private int tileCount;
         private int rows;
+        public float ScaleX { get; set; }
+        public float ScaleY { get; set; }
 
         private string _currentAnimation = string.Empty;
 
         public float Delay { get; set; }
 
         private double lastFrameShown;
+
+        private Vector2 _position;
+        public Vector2 Position { get { return _position; }
+            set {
+                _position = value;        
+                foreach (var anim in this.Animations) {
+                    anim.Position = _position;
+                }
+            }
+        }
 
         private Texture2D _texture;
         /*public Texture2D Texture { 
@@ -39,17 +55,44 @@ namespace LD27
         
         }*/
 
-        public string Animation { get { return _currentAnimation; } set { _currentAnimation = value; } }
+        public Texture2D Sheet { 
+            get 
+            {
+                return _spriteSheet;
+            } 
+            set
+            {
+                _spriteSheet = value;
+            } 
+        } 
 
-        public Dictionary<string, int[]> AnimationIndexes;
-        private PositionedQuad pq;
-        private SpriteSheet sheet;
-        
-        public SpriteSheet(TexturedQuad quad, Vector2 position) : base(quad, position) {
-            this.Initialize();
+        public TexturedQuad[] Tiles { get; set; }
+
+        public Dictionary<string, Animation> AnimationDefinitions;
+
+        public List<Animation> Animations;
+
+
+
+        public string Animation { get { return _currentAnimation; } 
+            set { 
+                _currentAnimation = value;
+                this.Animations.Clear();                
+                this.Animations.Add(this.AnimationDefinitions[_currentAnimation].Copy());
+                this.Animations.Last().DelaySeconds = (this.Delay > 0) ? Delay : 0.5f;
+            } 
         }
 
-        public SpriteSheet(Texture2D texture, float Scale, float ScaleY, Vector2 Location) : base(new TexturedQuad(Scale, ScaleY), Location) {
+        //public Dictionary<string, int[]> AnimationIndexes;
+        //private PositionedQuad pq;
+        private SpriteSheet sheet;
+        
+        public SpriteSheet(Texture2D texture) {
+            this.Initialize();
+            this.GenerateTiles();
+        }
+
+        public SpriteSheet(Texture2D texture, Vector2 Location) {
             this.Initialize();         
             this._spriteSheet = texture;
             //this.Texture = texture;
@@ -61,39 +104,31 @@ namespace LD27
                 this.tileHeight = texture.Height;
             }
             this.tileCount = 1;
-            
+            this.GenerateTiles();
             
         }
 
         public SpriteSheet(Texture2D texture, 
             GraphicsDevice Device,
-            int columns = 8, 
             int tilewidth = 64, 
-            int tileheight = 64, 
-            float scale=0.1f, 
-            float scaley=0.1f
-            ) : base(new TexturedQuad(scale, scaley), new Vector2()) 
+            int tileheight = 64,
+            int columns = 8,             
+            int scaleX = 1, 
+            int scaleY = 1
+            ) 
         {
             this.device = Device;
-            this.Initialize();
-            this.Show = true;
+            this.Initialize();            
             this._spriteSheet = texture;
-            this.tileHeight = tileheight;
-            this.tileWidth = tilewidth;
-            this.columns = columns;
-            this.rows = texture.Height/tileHeight;
-            this.tileCount = columns * rows;
-            
-            this.Delay = 0.5f;
-            this.Scale = tilewidth*1.666f / 800f;
-            this.ScaleY = tileheight / 480;
-            //this.Rescale(this.tileHeight/480);
-            this.GenerateVertices();
-         
+            SetTileSize(tileheight, tilewidth);
+                        
+            //this.Rescale(this.tileHeight/480);            
+            this.GenerateTiles();
         }
 
+
         // Copy constructor
-        public SpriteSheet(SpriteSheet sheet) : base(sheet, sheet.Position)
+        public SpriteSheet(SpriteSheet sheet)
         {
             //// TODO: Complete member initialization
             this.Initialize();
@@ -101,19 +136,31 @@ namespace LD27
             this.tileWidth = sheet.tileWidth;
             this.columns = sheet.columns;
             this.Current = sheet.Current;
-            this.Texture = sheet.Texture;
+            
             this.tileCount = sheet.tileCount;
             this._currentAnimation = sheet._currentAnimation;
-            this.AnimationIndexes = sheet.AnimationIndexes;
-            this.Show = sheet.Show;
-            this.isAnimated = sheet.isAnimated;
-            this.Scale = sheet.Scale;
-            this.ScaleY = sheet.ScaleY;
-            this.Position = sheet.Position;
-            this.GenerateVertices();
+            this.GenerateTiles();
         }
 
-        public void SetTileSize(int width, int height) {
+        private void GenerateTiles()
+        {
+            this.Tiles = new TexturedQuad[tileCount];
+            for (var y = 0; y < rows; y++) {
+                for (var x = 0; x<columns; x++) {            
+                    var tq=new TexturedQuad(){
+                        ScaleX = (this.ScaleX / columns),
+                        ScaleY = (this.ScaleY / rows),
+                        Texture = this._spriteSheet
+                    };
+                    tq.GenerateVerticesWithSubsection(x*tileWidth, y*tileHeight, (x+1)*tileWidth, (y+1)*tileHeight);
+                    this.Tiles[x + y * rows] = tq;
+                    
+                }                
+            }
+        }        
+
+        public void SetTileSize(int width, int height)
+        {
             this.tileHeight = height;
             this.tileWidth = width;
             this.columns = _spriteSheet.Width / width;
@@ -132,53 +179,7 @@ namespace LD27
                 }
             }
             return outColor;
-        }
-
-        public Texture2D First(GraphicsDevice device) {
-            this.device = device;
-            Texture2D tex = new Texture2D(device, tileWidth, tileHeight);
-            tex.SetData<Color>(GetRectColors(GetRectFromIndex(0)));
-            this.Texture = tex;
-            //this.Rescale(this.Scale, this.ScaleY);
-            return tex;
-        }
-
-        public void SetTileToCurrent(GraphicsDevice device) {
-            //var pq = (this as PositionedQuad);
-            this.device = device;
-            Texture2D currentTile = new Texture2D(device, this.tileWidth, this.tileHeight);
-            currentTile.SetData<Color>(GetRectColors(GetRectFromIndex(Current)));
-            this.Texture = currentTile;
-            //return pq;
-        }
-
-        public Texture2D Next(Texture2D prev)
-        {
-            if (tileCount <= 1) {
-                return prev;
-            }
-            List<int> allowedList = new List<int>();
-            if (!this._currentAnimation.Equals(String.Empty))
-            {
-                allowedList = AnimationIndexes[_currentAnimation].ToList();
-            }
-            if (Current < this.tileCount - 1 && (allowedList.Count == 0 || allowedList.Contains(Current +1)))
-            {
-                Current = Current + 1;
-            }
-            else {
-                if (allowedList.Count == 0)
-                {
-                    Current = 0; 
-                }
-                else {
-                    Current = allowedList.OrderBy((l) => (l)).First();                
-                }
-            }
-            prev.SetData<Color>(GetRectColors(GetRectFromIndex(Current)));
-            this.Texture = prev;                
-            return prev;
-        }
+        }        
 
         private Rectangle GetRectFromIndex(int index)
         {
@@ -188,66 +189,37 @@ namespace LD27
         }
 
         private void Initialize() {
+            this.AnimationDefinitions = new Dictionary<string, Animation>();
+            this.Animations = new List<Animation>();
             this.Current = 0;
             this.rows = 1; // always 1 row
             this.columns = 1;
-            this.AnimationIndexes = new Dictionary<string, int[]>();
-            this.tileCount = 64;
-
-            /*PresentationParameters pp = device.PresentationParameters;
-            renderTarget = new RenderTarget2D(device, 
-                64, //pp.BackBufferWidth, 
-                64, //pp.BackBufferHeight, 
-                true, device.DisplayMode.Format, DepthFormat.Depth24);
-             * */
+            this.tileCount = 64;        
         }
 
-        private void DefaultAnimationIndexing() {            
-            for (var y=0 ; y<this.rows; y++) {
-                List<int> frames = new List<int>();
-                for (var x=0 ; x<this.columns; x++) {
-                    frames.Add((y*this.columns) + x);                
-                }
-                this.AnimationIndexes.Add(String.Format("anim{0}", y), frames.ToArray() );
-            }            
-        }
-
-        public SpriteSheet Rescale() {
-            //Console.WriteLine("sx {0}, sy {1}", this.Scale, this.ScaleY);
-            this.GenerateVertices();
-            return this;
-        }
-
-        internal bool AllowNextFrame(double p)
-        {
-            if (!isAnimated) {
-                return false;
+        
+        public Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] GetPositionedTile(TexturedQuad Tile, Vector2 Position) {                       
+            VertexPositionNormalTexture[] outVerts = new VertexPositionNormalTexture[6];
+            for (int i = 0; i<Tile.Vertices.Length; i++) {                    
+                outVerts[i].TextureCoordinate = Tile.Vertices[i].TextureCoordinate;
+                outVerts[i].Normal = Tile.Vertices[i].Normal;
+                // FIXME: Make separate version allowing rotation
+                /*
+                outVerts[i].Position = Vector3.Transform(Tile.Vertices[i].Position, Matrix.CreateRotationX(Rotation.X));
+                outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationY(Rotation.Y));
+                outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationZ(Rotation.Z));                    
+                 */
+                outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateTranslation(new Vector3(Position.X, Position.Y, -1.0f)));                                    
             }
-
-            if (this.lastFrameShown + Delay < p) {
-                this.lastFrameShown = p;
-                return true;
-            }
-            return false;
-            
+            return outVerts;
         }
 
-        public bool isAnimated { get; set; }
 
-        /*internal RenderTarget2D GetTextureCopy()
+        internal Animation DefineAnimation(string p1, int[] p2, bool loop = true)
         {
-            this.device.SetRenderTarget(renderTarget);
-            //FIXME from tutorial, check if actually required.
-            this.device.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
-            this.device.Clear(Color.DarkGray);
-            SpriteBatch batch = new SpriteBatch(this.device);
-            batch.Begin();
-            batch.Draw(this.Texture, new Rectangle(0, 0, this.Texture.Width, this.Texture.Height), new Rectangle(0, 0, this.Texture.Width, this.Texture.Height), Color.White);
-            batch.End();
-            batch.Dispose();
-            this.device.SetRenderTarget(null);
-            return renderTarget;
-        }*/
+            this.AnimationDefinitions.Add(p1, new Animation() { FrameIndexes = p2, Loop = loop});
+            return AnimationDefinitions.Last().Value;
+        }
     }
 
 }
