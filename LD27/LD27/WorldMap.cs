@@ -217,7 +217,7 @@ namespace LD27
                 if (portal.isOpen)
                 {
                     TerrorLevel += 1;
-                    if (Creatures.Count < 20)
+                    if (Creatures.Count < 100)
                     {
                         Creatures.AddRange(portal.SpawnCreatures(Creatures.Count, TerrorLevel));
 

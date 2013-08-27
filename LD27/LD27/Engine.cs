@@ -128,7 +128,7 @@ namespace LD27
             float testScale = 64f / (screenh);
             defaultScale = testScale;
 
-            namedQuads.Add("map", new PositionedQuad(aspect, 1)
+            namedQuads.Add("map", new PositionedQuad(aspect,1f)
             {
                 Texture = Textures["mapRender"],
                 Position = new Vector2(Camera.X, Camera.Y),
@@ -146,8 +146,8 @@ namespace LD27
             
             var player = AddSpriteSheet("player", Textures["playerspritesheet"], WorldMap.Player.Location);
             player.DefineAnimation("idle", new int[] { 0, 1 });
-            player.DefineAnimation("attack", Enumerable.Range(16, 5).ToArray(), false);
-            //player.Animation = "attack";
+            player.DefineAnimation("attack", Enumerable.Range(16, 5).ToArray(), 0.08f, true);
+            player.AddAnimation("idle", WorldMap.Viewport, WorldMap.Player.ID);
             
             var tiles = AddSpriteSheet("tiles", Textures["tilesheet"], Vector2.Zero, false, false);
             tiles.DefineAnimation("test", Enumerable.Range(0, 64).ToArray());
@@ -162,22 +162,21 @@ namespace LD27
             enemies.DefineAnimation("large", new int[] { 16, 17 });
             enemies.DefineAnimation("itcomes", new int[] { 24, 25, 26 });
             enemies.DefineAnimation("test", Enumerable.Range(0, 64).ToArray());
-            enemies.Animation  ="test";
+            //enemies.Animation  ="test";            
             
             var timer = AddSpriteSheet("timer", Textures["bmpFont"], PixelPositionToVector2(screenw / 2, 32));
             
             var sfx = AddSpriteSheet("sfx", Textures["sfx"], Vector2.Zero, false, false);
             sfx.Delay = 0.200f;
-            sfx.DefineAnimation("row1", Enumerable.Range(0, 7).ToArray());
-            sfx.DefineAnimation("row2", Enumerable.Range(8,6).ToArray());
-            sfx.DefineAnimation("bloody", Enumerable.Range(16, 5).ToArray());
-            sfx.AnimationDefinitions["bloody"].DelaySeconds = 0.200f;
-            //sfx.Animation = "bloody";
+            sfx.DefineAnimation("row1", Enumerable.Range(0, 7).ToArray(), 0.250f);
+            sfx.DefineAnimation("row2", Enumerable.Range(8,6).ToArray(), 0.200f);
+            sfx.DefineAnimation("bloody", Enumerable.Range(16, 5).ToArray(), 0.300f);
+            
+            //sfx.Animation = "row2";
 
             
-            timer.DefineAnimation("timer", Enumerable.Range(32, 10).ToArray());
-            System.Diagnostics.Debug.Assert(timer.AnimationDefinitions["timer"].FrameIndexes.Contains(41));
-            timer.Delay = 1f;
+            timer.DefineAnimation("timer", Enumerable.Range(32, 10).ToArray(), 1f);
+            System.Diagnostics.Debug.Assert(timer.AnimationDefinitions["timer"].FrameIndexes.Contains(41));            
             timer.Animation = "timer";            
         }
         
@@ -193,12 +192,12 @@ namespace LD27
             }); // , 64, 64, 8, aspect, 1           
             var sprite = sprites.Values.Last();
             sprite.GenerateTiles();
-            sprite.DefineAnimation("default", new int[] { 0, 1 });
+            //sprite.DefineAnimation("default", new int[] { 0, 1 });
             //sprite.DefineAnimation("test1", new int[] { 9 });
-            if (show)
+            /*if (show)
             {
                 sprite.Animation = sprite.AnimationDefinitions.Keys.First();
-            }            
+            } */         
             return sprite;
         }
 
@@ -238,35 +237,54 @@ namespace LD27
                 var v1 = PixelPositionToVector2((int)(portal.Location.X-WorldMap.X), (int)(portal.Location.Y-WorldMap.Y));
                 if (portal.isOpen) {                    
                     sprites["tiles"].AddAnimation("portal", v1);                     
+                }                
+            }
+            sprites["tiles"].PruneUnusedAnimations(WorldMap.Portals.Select((x)=>(x.ID)));
+            
+            //renderQuads.AddRange(sprites.Values);
+            var player = sprites["player"];
+            if (WorldMap.Player.Is("attacking"))
+            {
+                //WorldMap.Player.Unset("attacking");
+                /*f (player.Animation=="attack" && !player.Animations.Last().Playing) // attack doesn't loop
+                {
+                 
+                    player.Animations.Clear();
+                    //player.Animation = "idle";
+                    player.AddAnimation("attack", WorldMap.Player.Location, WorldMap.Player.ID);
+                }
+                else
+                {
+                    player.Animations.Clear();
+                    //player.Animation = "attack";
+                    player.AddAnimation("attack", WorldMap.Player.Location, WorldMap.Player.ID);
+                }*/
+                if (player.Animation == "idle")
+                {
+                    player.Animations.Clear();
+                    player.AddAnimation("attack", WorldMap.Player.Location, WorldMap.Player.ID);
+                    WorldMap.Player.Unset("attacking");
                 }
                 
             }
-            sprites["tiles"].PruneUnusedAnimations(WorldMap.Portals.Select((i) => (i.ID)));
-
-            //renderQuads.AddRange(sprites.Values);
-            if (WorldMap.Player.Is("attacking")) {
-                var player = sprites["player"];
-                if (player.Animation.Equals("attack"))
-                {
-                    WorldMap.Player.Set("attacking", 0);
-                    player.Animation = "attack";
-                    player.Delay = 0.5f;
-                }
-                else {
-                    player.Animation = "attack";
-                    player.Delay = 0.05f;
-                    //player.Delay = WorldMap.Player.Get("attacking");
-                }
+            else 
+            {  
+                player.Animations.Clear();                
+                 player.AddAnimation("idle", WorldMap.Player.Location, WorldMap.Player.ID);
             }
-
             
+            //sprites["player"].PruneUnusedAnimations(new int [] {9999});
+            //sprites["player"].PruneUnusedAnimations(new int[] { WorldMap.Player.ID });
+
+
+
 
             var enemies = sprites["enemies"];
             //enemies.Current = 0;
             //enemies.SetTileToCurrent(GraphicsDevice);            
 
             foreach (var enemy in WorldMap.Creatures) {
-                var v1 = PixelPositionToVector2((int)(enemy.Location.X - WorldMap.X), (int)(enemy.Location.Y - WorldMap.Y));
+                var enemylocation = PixelPositionToVector2((int)(enemy.Location.X - WorldMap.X), (int)(enemy.Location.Y - WorldMap.Y));
                 string type = string.Empty;
                 switch (enemy.Type) { 
                     case Creature.Types.PLAYER:
@@ -292,7 +310,7 @@ namespace LD27
                 }
                 if (!type.Equals(string.Empty))
                 {
-                    enemies.AddAnimation(type, enemy.Location, enemy.ID);
+                    enemies.AddAnimation(type, enemylocation, enemy.ID);
                 }                
                 
             }
@@ -368,7 +386,9 @@ namespace LD27
                 }
             }
 
-            foreach (var sheet in sprites.Values) {
+            foreach (var kvpair in sprites) {                
+                var sheet = kvpair.Value;
+                //Console.WriteLine("Animations for {0}: {1}", kvpair.Key, sheet.Animations.Count);
                 foreach (var anim in sheet.Animations)
                 {                    
                     RenderVertices(GraphicsDevice, sheet.Sheet, sheet.GetPositionedTile(sheet.Tiles[anim.CurrentFrame], anim.Position));

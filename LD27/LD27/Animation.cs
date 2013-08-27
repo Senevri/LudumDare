@@ -28,7 +28,7 @@ namespace LD27
         }
 
         public int getNextAllowedIndex(float gameTimeTotalSeconds) {
-            if ((gameTimeTotalSeconds - _lastFrameShown) > DelaySeconds) {
+            if ((gameTimeTotalSeconds-_lastFrameShown) > DelaySeconds) {
                 _lastFrameShown = gameTimeTotalSeconds;
                 return getNextIndex();
             }
@@ -37,8 +37,13 @@ namespace LD27
 
         public int getNextIndex(int i=0) {
             if (CurrentFrameIndex == FrameIndexes.Count() - 1) {
-                if (Loop) {
+                if (Loop)
+                {
                     CurrentFrameIndex = 0;
+                }
+                else 
+                {
+                    this.Playing = false;
                 }
             } else {
                 CurrentFrameIndex++;
@@ -49,7 +54,7 @@ namespace LD27
         public Microsoft.Xna.Framework.Vector2 Position { get; set; }
 
         public Animation Copy() {
-            var newAnimation = new Animation() { DelaySeconds = this.DelaySeconds, /*CurrentFrame = this.CurrentFrame,*/ Loop =this.Loop, Position = this.Position};
+            var newAnimation = new Animation() { DelaySeconds = this.DelaySeconds, /*CurrentFrame = this.CurrentFrame,*/ Loop =this.Loop, Position = this.Position, ID = this.ID};
             newAnimation.FrameIndexes = new int[FrameIndexes.Length];
             Array.Copy(FrameIndexes, newAnimation.FrameIndexes, FrameIndexes.Length);
             return newAnimation;

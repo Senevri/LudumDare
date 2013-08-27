@@ -54,11 +54,11 @@ namespace LD27
             GenerateVertices();
         }
 
-        public PositionedQuad(float scale,  float scaley=1)
+        public PositionedQuad(float scale,  float scaley=0)
         {
             // TODO: Complete member initialization
             this.ScaleX = scale;
-            this.ScaleY = scale;
+            this.ScaleY = scaley;
             if (ScaleY == 0)
             {
                 ScaleY = ScaleX;

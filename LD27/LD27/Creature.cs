@@ -53,6 +53,10 @@ namespace LD27
             return f_old;
         }
 
+        public void Unset(string s) {
+            this._properties.Remove(s);
+        }
+
         public float Get(string s, float? newval = null) {
             if (this._properties.ContainsKey(s))
             {

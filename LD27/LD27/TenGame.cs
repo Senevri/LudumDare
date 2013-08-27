@@ -115,6 +115,7 @@ namespace LD27
             float yshift = 0;
             float zshift = 0;
 
+            worldMap.Player.Unset("attacking");
             if (kbdState.IsKeyDown(Keys.Z))
             {
                 var loc = WorldMap.GetMoveLocation(AdjustVector2(worldMap.Viewport, screenw / 2, screenh / 2), player.Direction, player.Range);
@@ -192,6 +193,8 @@ namespace LD27
                 if (player.Health <= 0)
                 {
                     //player.Health = 100;
+                    engine.Dispose();
+                    engine = null;
                     this.LoadContent();
                     return;
                 }

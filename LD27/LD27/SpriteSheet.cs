@@ -79,12 +79,13 @@ namespace LD27
 
 
 
-        public string Animation { get { return _currentAnimation; } 
+        public string Animation { get 
+            { return _currentAnimation; 
+            } 
             set { 
                 _currentAnimation = value;
                 this._animations.Clear();                
-                this._animations.Add(0, this.AnimationDefinitions[_currentAnimation].Copy());
-                this.Animations.Last().DelaySeconds = (this.Delay > 0) ? Delay : 0.5f;
+                this.AddAnimation(_currentAnimation, AnimationDefinitions[_currentAnimation].Position, 0);                
             } 
         }
 
@@ -219,9 +220,9 @@ namespace LD27
         }
 
 
-        internal Animation DefineAnimation(string p1, int[] p2, bool loop = true)
+        internal Animation DefineAnimation(string p1, int[] p2, float delay = 0.500f, bool loop = true)
         {
-            this.AnimationDefinitions.Add(p1, new Animation() { FrameIndexes = p2, Loop = loop});
+            this.AnimationDefinitions.Add(p1, new Animation() { FrameIndexes = p2, Loop = loop, DelaySeconds = delay, ID=this.AnimationDefinitions.Count});
             return AnimationDefinitions.Last().Value;
         }
 
@@ -231,12 +232,18 @@ namespace LD27
             // recycle
             if (this._animations.ContainsKey(id))
             {
-                this._animations[id].Position = v1;
+                if (this._animations[id].ID == this.AnimationDefinitions[p].ID) {
+                    this._animations[id].Position = v1;
+                } else {
+                    this._animations[id] = this.AnimationDefinitions[p].PositionCopy(v1);
+                }
             }
             else
             {
-                this._animations.Add(id, this.AnimationDefinitions[p].PositionCopy(v1));
+                this._animations.Add(id, this.AnimationDefinitions[p].PositionCopy(v1));                
             }
+            this._animations[id].Playing=true;
+            this._currentAnimation = p;
         }
 
         internal void PruneUnusedAnimations(IEnumerable<int> enumerable)
