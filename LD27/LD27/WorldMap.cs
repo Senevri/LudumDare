@@ -72,7 +72,11 @@ namespace LD27
             
         }
 
-        public void LoadMap(string mapname) {
+        public bool Loading { get; set;  }
+
+        public void LoadMap(string mapname)
+        {
+            this.Loading = true;
             map = Squared.Tiled.Map.Load(String.Format("Content\\{0}", mapname), content);
 
             Random random = new Random();
@@ -92,7 +96,7 @@ namespace LD27
                         {
                             CreatureTypes = new Creature.Types[] { Creature.Types.SMALL, Creature.Types.MEDIUM },
                             Location = new Vector2(tiledobj.X + tiledobj.Width / 2, tiledobj.Y + tiledobj.Height / 2),
-                            Size = random.Next(1, 4),
+                            Size = random.Next(1, 6),
                             isOpen = false
                         });
                     }
@@ -116,7 +120,7 @@ namespace LD27
             this.Viewport = new Vector2(Player.Location.X - (screenw / 2), Player.Location.Y - (screenh / 2));
             X = this.Viewport.X;
             Y = this.Viewport.Y;
-
+            this.Loading = false;
         }
 
         /* 
@@ -162,8 +166,7 @@ namespace LD27
                         this.Creatures.Clear();
                         this.Portals.Clear();
                         this.Locations.Clear();
-                        LoadMap("BossFight.tmx");
-
+                        LoadMap("BossFight.tmx");                                                
                     } 
                 }
 
@@ -173,7 +176,7 @@ namespace LD27
                 Player.Set("TerrorDeath");
                 //System.Diagnostics.Debugger.Break();
             }
-            if (totalKills >= 80) {
+            if (totalKills >= 100) {
                 EndGame = true;
             }
             //Console.WriteLine("WorldMap Update time: {0}", DateTime.Now.Ticks - ticks);
@@ -271,7 +274,7 @@ namespace LD27
                 position.X = (int)Math.Round((Target.X+shiftx)/map.TileWidth);
                 position.Y = (int)Math.Round((Target.Y+shifty)/map.TileHeight);
                 //get tile position in reference to Target location (in pixels) 
-                if (position.X < 0 || position.Y < 0 || position.X > map.TileWidth || position.Y > map.TileHeight) {
+                if (position.X < 0 || position.Y < 0 || position.X > map.Width || position.Y > map.Height) {
                     return false;
                 }
                 int tile = layer.GetTile(position.X, position.Y);
@@ -327,7 +330,7 @@ namespace LD27
 
             if (angle == -Math.PI/2)
             {
-                return new Vector2(vector.X, vector.Y + (float)distance);
+                return new Vector2(vector.X, vector.Y - (float)distance);
             }
             if (angle == Math.PI / 2)
             {

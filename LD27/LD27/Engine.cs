@@ -320,7 +320,7 @@ namespace LD27
                 if (WorldMap.EndGame && loc.Type == "EndGame") {
                     var v = PixelPositionToVector2((int)((loc.X - WorldMap.X) + loc.Width/2), (int)((loc.Y - WorldMap.Y) + loc.Height/2));
                     var misc = sprites["misc"];
-                    misc.AddAnimation("portal", v);                    
+                    misc.AddAnimation("bigportal", v);                    
                     }
             }
             sprites["misc"].PruneUnusedAnimations(WorldMap.Locations.Select((i) => (i.ID)));

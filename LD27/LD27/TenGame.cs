@@ -81,6 +81,7 @@ namespace LD27
             Textures.Add("helpscreen", Content.Load<Texture2D>("helpscreen"));
 
 
+
             // TODO: use this.Content to load your game content here
         }
 
@@ -132,10 +133,12 @@ namespace LD27
                     Speed = 4
 
                 });
+                player.Set("slowed", player.Speed);
+                player.Speed = player.Speed / 2;
                 startTime = -1;
             }
 
-            if (kbdState.IsKeyDown(Keys.X))
+            if (kbdState.IsKeyDown(Keys.X) && !player.Is("slowed"))
             {
                 worldMap.Player.Set("attacking", 0.5f);
                 worldMap.Forces.Add(new Attack()
@@ -150,7 +153,7 @@ namespace LD27
                     Speed = 0
                 });
                 player.Set("slowed", player.Speed);
-                player.Speed = player.Speed / 2;
+                player.Speed = player.Speed / 4;
 
             }
 
@@ -211,16 +214,19 @@ namespace LD27
 
 
             var worldMapTarget = new Vector2(worldMap.X + xpixels, worldMap.Y - ypixels);
+            if (!worldMap.Loading)
+            {
+                if (worldMap.IsValidPath(worldMap.Viewport, worldMapTarget, (screenw / 2) - 32, (screenh / 2) - 32))
+                {
 
-            if (worldMap.IsValidPath(worldMap.Viewport, worldMapTarget, (screenw/2)-32, (screenh/2)-32)) {
+                    engine.Camera = new Vector3(engine.Camera.X + xshift, engine.Camera.Y + yshift, engine.Camera.Z + zshift);
+                    engine.Target = new Vector3(engine.Target.X + xshift, engine.Target.Y + yshift, -1);
 
-                engine.Camera = new Vector3(engine.Camera.X + xshift, engine.Camera.Y + yshift, engine.Camera.Z + zshift);
-                engine.Target = new Vector3(engine.Target.X + xshift, engine.Target.Y + yshift, -1);
+                    worldMap.Viewport = worldMapTarget;
 
-                worldMap.Viewport = worldMapTarget;
-
-                // keep player  at the center of the screen.
-                worldMap.Player.Location = worldMap.Viewport;
+                    // keep player  at the center of the screen.
+                    worldMap.Player.Location = worldMap.Viewport;
+                }
             }
 
             base.Update(gameTime);
@@ -270,8 +276,14 @@ namespace LD27
                 spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
                 spriteBatch.GraphicsDevice.SamplerStates[0].Filter = TextureFilter.Point;
                 spriteBatch.Draw(flatTextures,
-                    new Rectangle(3, 3, 8, (int)(GraphicsDevice.Viewport.Height - 6) * (int)worldMap.Player.Health / 100), new Rectangle(0, 0, 64, 64), Color.White, 0, Vector2.Zero,
+                    new Rectangle(3, 3, 8, (int)(GraphicsDevice.Viewport.Height - 6) * (int)worldMap.Player.Health / 100), 
+                    new Rectangle(0, 0, 64, 64), Color.White, 0, Vector2.Zero,
                     SpriteEffects.None, 0);
+                spriteBatch.Draw(flatTextures,
+                    new Rectangle(GraphicsDevice.Viewport.Width - 11, 3, 8, (int)(GraphicsDevice.Viewport.Height - 6) * (int)worldMap.TerrorLevel / 100),
+                    new Rectangle(64, 0, 128, 64), Color.Purple, 0, Vector2.Zero,
+                    SpriteEffects.None, 0);
+
                 if (startTime > 0 && (gameTime.TotalGameTime.TotalSeconds - startTime) < 9) {
                     spriteBatch.Draw(Textures["helpscreen"], new Rectangle(32, 32, GraphicsDevice.Viewport.Width-64, GraphicsDevice.Viewport.Height-64),
                     new Rectangle(0, 0, 320, 200), Color.White*0.7f);                                 

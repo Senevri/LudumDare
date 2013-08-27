@@ -169,9 +169,10 @@ namespace LD27
                 {
                     Creator = creature,
                     Damage = creature.Attack,
-                    Range = creature.Range,
+                    Range = creature.Range+16,
                     Location = creature.GetMoveLocation(creature.Location.X, creature.Location.Y, creature.Direction, 32f),
-                    WorldMap = worldMap
+                    WorldMap = worldMap,
+                    Visual = Force.Visuals.Bloody
                 });
             }
 
