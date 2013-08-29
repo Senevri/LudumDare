@@ -66,9 +66,16 @@ namespace LD27
                 Range  =32, 
                 Speed = 7                
             };
+            Player.AddCard(Card.Types.Heal);
+            Player.AddCard(Card.Types.Bomb);
+            Player.AddCard(Card.Types.Heal);
+            Player.AddCard(Card.Types.Bomb);
+
+
             //Player.AIScript = Creature.CreateAttackIfInRange;
             Creatures.Add(Player);
             LoadMap("WorldMap.tmx");
+            EndGame = true;
             
         }
 
@@ -161,13 +168,13 @@ namespace LD27
 
                 previousUpdateTotalSeconds = gameTime.TotalGameTime.TotalSeconds;
                 if (this.EndGame) {
-                    if (32 < Math.Abs(this.Viewport.X - this.X) && (32 < Math.Abs(this.Viewport.Y - this.Y))) {
+                    /*if (32 < Math.Abs(this.Viewport.X - this.X) && (32 < Math.Abs(this.Viewport.Y - this.Y))) {
                         this.Forces.Clear();
                         this.Creatures.Clear();
                         this.Portals.Clear();
                         this.Locations.Clear();
                         LoadMap("BossFight.tmx");                                                
-                    } 
+                    } */
                 }
 
             }
@@ -177,6 +184,7 @@ namespace LD27
                 //System.Diagnostics.Debugger.Break();
             }
             if (totalKills >= 100) {
+                
                 EndGame = true;
             }
             //Console.WriteLine("WorldMap Update time: {0}", DateTime.Now.Ticks - ticks);
@@ -189,6 +197,8 @@ namespace LD27
             // each open portal spawns creatures.                
             Console.WriteLine("Time: {2}, Player Kills: {0} | Terrorlevel: {1}", Player.Kills, TerrorLevel, time);
             //spawn cards
+            SpawnCards(Player.Kills);
+
             totalKills += Player.Kills;
             Player.Kills = 0;
 
@@ -234,6 +244,21 @@ namespace LD27
 
             time = 0;
             
+        }
+
+
+        // FIXME: Who is the correct owner? 
+        private void SpawnCards(int p)
+        {
+            if (p > 5) {
+                Player.AddCard(Card.Types.Bomb);                
+            }
+            if (p > 10) {
+                Player.AddCard(Card.Types.Heal);                            
+            }
+            if (p > 15) {
+                Player.AddCard(Card.Types.Sign);                            
+            }
         }
 
         

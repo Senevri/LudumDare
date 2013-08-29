@@ -8,6 +8,7 @@ namespace LD27
     class Animation
     {
         public int ID { get; set; }
+        public float Scale { get; set; }
         public int[] FrameIndexes { get; set; }
         public float DelaySeconds { get; set; }
         public int CurrentFrameIndex { get; set; }
@@ -22,6 +23,7 @@ namespace LD27
         private float _lastFrameShown;
 
         public Animation() {
+            Scale = 1;
             CurrentFrameIndex = 0;
             Loop = true;
             DelaySeconds = 0.200f;
@@ -54,7 +56,12 @@ namespace LD27
         public Microsoft.Xna.Framework.Vector2 Position { get; set; }
 
         public Animation Copy() {
-            var newAnimation = new Animation() { DelaySeconds = this.DelaySeconds, /*CurrentFrame = this.CurrentFrame,*/ Loop =this.Loop, Position = this.Position, ID = this.ID};
+            var newAnimation = new Animation() { 
+                DelaySeconds = this.DelaySeconds, 
+                /*CurrentFrame = this.CurrentFrame,*/ 
+                Loop =this.Loop, 
+                Position = this.Position, 
+                ID = this.ID, Scale=this.Scale};
             newAnimation.FrameIndexes = new int[FrameIndexes.Length];
             Array.Copy(FrameIndexes, newAnimation.FrameIndexes, FrameIndexes.Length);
             return newAnimation;

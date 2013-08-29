@@ -16,6 +16,7 @@ namespace LD27
         public enum Types {CIVILIAN, PLAYER, SMALL, MEDIUM, LARGE, BEWARE}
         public Vector2 Location { get; set; }
         public Types Type { get; set; }
+        public Queue<Card> Cards { get; set; }
         public int Kills { get; set; }
         public float Health { get; set; }
         public float Attack { get; set; }
@@ -38,6 +39,7 @@ namespace LD27
             Creature.lastID = this.ID;
             this.Speed = 1f;
             this._properties = new Dictionary<string, float>();
+            this.Cards = new Queue<Card>();
         }
 
         public bool Is(string s) {
@@ -199,6 +201,12 @@ namespace LD27
             }
             
         }
- 
+
+
+        internal void AddCard(Card.Types type)
+        {
+            
+            Cards.Enqueue(Card.CreateCard(type));
+        }
     }
 }

@@ -23,8 +23,8 @@ namespace LD27
         private static GraphicsDevice _graphicsDevice;
         Texture2D flatTextures;
         Dictionary<string, Texture2D> Textures;
-        private int screenw;
-        private int screenh;
+        public static int screenw;
+        public static int screenh;
 
         public TenGame()
             : base()
@@ -131,8 +131,9 @@ namespace LD27
                     Damage = player.Attack / 2,
                     Location = loc,
                     Range = player.Range,
+                    Duration = 40,
                     Direction = (float)player.Direction,
-                    Speed = 6
+                    Speed = 7
 
                 });
                 player.Set("slowed", player.Speed);
@@ -142,13 +143,13 @@ namespace LD27
 
             if (kbdState.IsKeyDown(Keys.X) && !player.Is("attacking"))
             {
-                worldMap.Player.Set("attacking", 2f);
+                worldMap.Player.Set("attacking", 1.2f);
                 worldMap.Forces.Add(new Attack()
                 {
                     Visual = Force.Visuals.Test2,
                     Creator = worldMap.Player,
                     WorldMap = worldMap,
-                    Damage = 2 * player.Attack,
+                    Damage = 4 * player.Attack,
                     Location = AdjustVector2(worldMap.Viewport, screenw / 2, screenh / 2),
                     Range = player.Range,
                     Duration = 10,
@@ -159,6 +160,19 @@ namespace LD27
 
             }
 
+
+            player.Set("usingCard", player.Get("usingCard") - 0.1f);
+            if (kbdState.IsKeyDown(Keys.Space)) {
+                if (!player.Is("usingCard") && player.Cards.Count > 0)
+                {
+                    player.Set("usingCard");
+                    var card = player.Cards.Dequeue();
+                    if (null != card)
+                    {
+                        card.Apply(worldMap, worldMap.Player);
+                    }
+                }
+            }
 
             if (kbdState.IsKeyDown(Keys.Up)) {
                 yshift += player.Speed/100f;

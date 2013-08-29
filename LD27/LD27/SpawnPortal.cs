@@ -23,13 +23,7 @@ namespace LD27
             ID = SpawnPortal.lastID + 1;
             SpawnPortal.lastID = ID;
         
-            if (terrorlevel > 5) {
-                this.CreatureTypes = new Creature.Types[]{
-                        Creature.Types.SMALL,
-                        Creature.Types.MEDIUM,                    
-                        };
-                this.Size += 2;
-            }
+            
             if (terrorlevel < 5) {
                 this.CreatureTypes = new Creature.Types[]{
                     Creature.Types.SMALL,
@@ -37,13 +31,21 @@ namespace LD27
             
                     };
             }
+            if (terrorlevel > 5)
+            {
+                this.CreatureTypes = new Creature.Types[]{
+                        Creature.Types.SMALL,
+                        Creature.Types.MEDIUM,                    
+                        };
+                this.Size += 2;
+            }
 
             if (terrorlevel > 10) { 
                 this.CreatureTypes = new Creature.Types[]{                    
                     Creature.Types.MEDIUM,
                     Creature.Types.LARGE
                 };
-                this.Size += 4;
+                this.Size += 2;
             }
 
             if (terrorlevel > 20) {
@@ -51,7 +53,7 @@ namespace LD27
                     Creature.Types.LARGE,
                     Creature.Types.BEWARE                    
                 };
-                this.Size += 8;
+                this.Size += 4;
             }
 
 

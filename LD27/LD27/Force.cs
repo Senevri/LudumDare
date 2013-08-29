@@ -10,7 +10,7 @@ namespace LD27
     {
         public static int lastID;
         public int ID { get; set; } 
-        public enum Visuals { Test, Test2, Bloody }
+        public enum Visuals { Test, Test2, Bloody, Explosion }
         public enum Sounds { Default, Flame };
         protected bool _isApplied;
         public bool IsApplied { get {
@@ -90,5 +90,29 @@ namespace LD27
             }
             self._isApplied = true;            
         }
+    }
+    class Explosion : Force {
+        public float Range { get; set; }
+        public float Damage { get; set; }
+        public float Duration { get; set; }
+
+        public Explosion() {
+            _apply = this.ExplosionFunc;
+            this.Visual = Visuals.Explosion;            
+        }
+
+        public void ExplosionFunc() {
+            var self = this as Explosion;
+            WorldMap.Creatures.ForEach((c) =>
+            {
+                if ((c.ID != this.Creator.ID) &&
+                    (WorldMap.GetDistance(c.Location, this.Creator.Location)<=this.Range))
+                {
+                    c.Health -= this.Damage;                    
+                }
+            });
+            self._isApplied = true;
+        }
+    
     }
 }

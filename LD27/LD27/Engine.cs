@@ -136,13 +136,18 @@ namespace LD27
                 Position = new Vector2(Camera.X, Camera.Y),
                 Show = true
             });
+
+            var cards = AddSpriteSheet("cards", Textures["misc"], Vector2.Zero, true, true);
+            cards.SetTileSize(64, 128);
+            cards.DefineAnimation("bomb", new int[] { 24 });
+            cards.DefineAnimation("heal", new int[] { 25 });
+            //cards.DefineAnimation("heal", new int[] { 6*8+1 });
+            cards.DefineAnimation("sign", new int[] { 26 });
                                     
-            var misc = AddSpriteSheet("misc", Textures["misc"], Vector2.Zero, false, false);
+            var misc = AddSpriteSheet("misc", Textures["misc"], Vector2.Zero, true, false);
             misc.SetTileSize(128, 128);
-            misc.ScaleX = 3 * aspect;
-            misc.ScaleY = 3f;
             misc.Delay = 0.1f;
-            misc.AnimationDefinitions.Add("bigportal", new Animation(){FrameIndexes = Enumerable.Range(4, 4).ToArray()});
+            misc.DefineAnimation("bigportal", Enumerable.Range(4, 4).ToArray());
             //misc.Animations.Add(misc.AnimationDefinitions.First().Value.Copy());
             
             
@@ -173,7 +178,7 @@ namespace LD27
             sfx.DefineAnimation("row1", Enumerable.Range(0, 7).ToArray(), 0.250f);
             sfx.DefineAnimation("row2", Enumerable.Range(8,6).ToArray(), 0.200f);
             sfx.DefineAnimation("bloody", Enumerable.Range(16, 5).ToArray(), 0.300f);
-            
+            sfx.DefineAnimation("explosion", Enumerable.Range(0, 7).ToArray(), 0.250f, false, 5);
             //sfx.Animation = "row2";
 
             
@@ -329,6 +334,9 @@ namespace LD27
                         type = "bloody";
                         v = TenGame.AdjustVector2(WorldMap.Viewport, screenw / 2, screenh / 2);
                         break;
+                    case Force.Visuals.Explosion:
+                        type = "explosion";                        
+                        break;                    
                     default:
                         sfx.Animation = string.Empty;
                         break;
@@ -340,7 +348,29 @@ namespace LD27
                 }
             }
             sprites["sfx"].PruneUnusedAnimations(WorldMap.Forces.Select((i) => (i.ID)));
-          
+
+            sprites["cards"].PruneUnusedAnimations(WorldMap.Player.Cards.Select((i) => ((int)i.Type)));
+            int xshift = 0;
+            foreach (var card in WorldMap.Player.Cards) {
+                string type = string.Empty;
+                switch (card.Type) { 
+                    case Card.Types.Bomb:
+                        type = "bomb";
+                        break;
+                    case Card.Types.Heal:
+                        type = "heal";
+                        break;
+                    case Card.Types.Sign:
+                        type = "sign";
+                        break;
+                }
+                if (type != string.Empty) {
+                    sprites["cards"].AddAnimation(type, FixedPixelPositionToVector2((64*xshift)+64, screenh-67), xshift);
+                }
+                xshift++;
+            }
+            
+
             verts.AddRange(namedQuads["map"].Vertices);
             
             foreach (var sprite in sprites.Values) {
@@ -378,11 +408,22 @@ namespace LD27
                 //Console.WriteLine("Animations for {0}: {1}", kvpair.Key, sheet.Animations.Count);
                 foreach (var anim in sheet.Animations)
                 {                    
-                    RenderVertices(GraphicsDevice, sheet.Sheet, sheet.GetPositionedTile(sheet.Tiles[anim.CurrentFrame], anim.Position));
+                    RenderVertices(GraphicsDevice, sheet.Sheet, sheet.GetPositionedTile(sheet.Tiles[anim.CurrentFrame], anim.Position, anim.Scale));
                 }
             }
 
             //Console.WriteLine("Engine Draw time: {0}", DateTime.Now.Ticks - ticks);
+        }
+
+        private Vector2 FixedPixelPositionToVector2(int x, int y)
+        {
+            float fx = 0;
+            float fy = 0;
+
+            fx = Camera.X + (float)(aspect * ((2.0 * (double)x / (double)GraphicsDevice.Viewport.Bounds.Width)));
+            fy = Camera.Y + (float)(-2.0 * (double)y / (double)GraphicsDevice.Viewport.Bounds.Height);
+            return new Vector2(fx - aspect, fy + 1);
+
         }        
 
         private void RenderVertices(Microsoft.Xna.Framework.Graphics.GraphicsDevice GraphicsDevice,Texture2D texture2D,VertexPositionNormalTexture[] vertices)

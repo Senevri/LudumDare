@@ -65,6 +65,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Animation.cs" />
+    <Compile Include="Card.cs" />
     <Compile Include="Identifiable.cs" />
     <Compile Include="Creature.cs" />
     <Compile Include="Engine.cs" />

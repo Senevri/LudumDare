@@ -158,7 +158,7 @@ namespace LD27
                         Texture = this._spriteSheet
                     };
                     tq.GenerateVerticesWithSubsection(x*tileWidth, y*tileHeight, tileWidth, tileHeight);
-                    this.Tiles[x + y * rows] = tq;
+                    this.Tiles[x + y * columns] = tq;
                     
                 }                
             }
@@ -171,6 +171,7 @@ namespace LD27
             this.columns = _spriteSheet.Width / width;
             this.rows = _spriteSheet.Height / height;
             this.tileCount = columns * rows;
+            this.GenerateTiles();
         }
         
         public Color[] GetRectColors(Rectangle rect) { 
@@ -203,7 +204,7 @@ namespace LD27
         }
 
         
-        public Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] GetPositionedTile(TexturedQuad Tile, Vector2 Position) {                       
+        public Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] GetPositionedTile(TexturedQuad Tile, Vector2 Position, float scale=1) {                       
             VertexPositionNormalTexture[] outVerts = new VertexPositionNormalTexture[6];
             for (int i = 0; i<Tile.Vertices.Length; i++) {                    
                 outVerts[i].TextureCoordinate = Tile.Vertices[i].TextureCoordinate;
@@ -214,15 +215,16 @@ namespace LD27
                 outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationY(Rotation.Y));
                 outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationZ(Rotation.Z));                    
                  */
-                outVerts[i].Position = Vector3.Transform(Tile.Vertices[i].Position, Matrix.CreateTranslation(new Vector3(Position.X, Position.Y, -1.0f)));                                    
+                outVerts[i].Position = Vector3.Transform(Tile.Vertices[i].Position, Matrix.CreateScale(scale));
+                outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateTranslation(new Vector3(Position.X, Position.Y, -1.0f)));                                    
             }
             return outVerts;
         }
 
 
-        internal Animation DefineAnimation(string p1, int[] p2, float delay = 0.500f, bool loop = true)
+        internal Animation DefineAnimation(string p1, int[] p2, float delay = 0.500f, bool loop = true, float scale = 1)
         {
-            this.AnimationDefinitions.Add(p1, new Animation() { FrameIndexes = p2, Loop = loop, DelaySeconds = delay, ID=this.AnimationDefinitions.Count});
+            this.AnimationDefinitions.Add(p1, new Animation() { FrameIndexes = p2, Loop = loop, DelaySeconds = delay, ID=this.AnimationDefinitions.Count, Scale = scale});
             return AnimationDefinitions.Last().Value;
         }
 
