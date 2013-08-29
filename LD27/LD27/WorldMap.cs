@@ -131,12 +131,12 @@ namespace LD27
             if (previousUpdateTotalSeconds == 0) { previousUpdateTotalSeconds = gameTime.TotalGameTime.TotalSeconds; }
             Random random = new Random();
             double timeDelta = gameTime.TotalGameTime.TotalSeconds - previousUpdateTotalSeconds;
-            if ((time >= 10) && timeDelta > 0.040) {
+            if ((time >= 10) && timeDelta > 0.025) {
                 TenSecondUpdate(time, random);
                 this.Disaster = false;
             }
 
-            if (timeDelta > 0.040) {//25fps 
+            if (timeDelta > 0.025) {//40fps 
                 foreach (var creature in this.Creatures) {
                     if (creature.Type != Creature.Types.CIVILIAN && creature.Type != Creature.Types.PLAYER) { 
                         //move creature; pause just before deadline
@@ -223,11 +223,11 @@ namespace LD27
                     if (Creatures.Count < 100)
                     {
                         Creatures.AddRange(portal.SpawnCreatures(Creatures.Count, TerrorLevel));
-
+                        portal.Size += 0.1f;
                     }
                     else
                     {
-                        portal.Size += 0.1f;
+                        portal.Size += 1f;
                     }
                 }
             }

@@ -11,6 +11,7 @@ namespace LD27
         public static int lastID;
         public int ID { get; set; } 
         public enum Visuals { Test, Test2, Bloody }
+        public enum Sounds { Default, Flame };
         protected bool _isApplied;
         public bool IsApplied { get {
             return _isApplied;
@@ -18,6 +19,7 @@ namespace LD27
         public bool Remove { get; set; }
 
         public Visuals Visual { get; set; }
+        public Sounds Sound { get; set; }
         public WorldMap WorldMap { get; set; }
         public Vector2 Location { get; set; }
         public Creature Creator { get; set; }

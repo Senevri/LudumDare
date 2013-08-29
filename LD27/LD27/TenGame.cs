@@ -35,6 +35,7 @@ namespace LD27
             graphics.PreferredBackBufferWidth = 800;
             graphics.PreferredBackBufferHeight = 480;
             TenGame._graphicsDevice = GraphicsDevice;
+            //graphics.IsFullScreen = true;
         }
 
 
@@ -116,11 +117,12 @@ namespace LD27
             float yshift = 0;
             float zshift = 0;
 
-            worldMap.Player.Unset("attacking");
-            if (kbdState.IsKeyDown(Keys.Z))
+            //worldMap.Player.Unset("attacking");
+            player.Get("attacking", player.Get("attacking") - 0.1f);
+            if (kbdState.IsKeyDown(Keys.Z) && !player.Is("attacking"))
             {
                 var loc = WorldMap.GetMoveLocation(AdjustVector2(worldMap.Viewport, screenw / 2, screenh / 2), player.Direction, player.Range);
-                worldMap.Player.Set("attacking", 0.5f);
+                worldMap.Player.Set("attacking", 1f);
                 worldMap.Forces.Add(new Attack()
                 {
                     Visual = Force.Visuals.Test,
@@ -130,7 +132,7 @@ namespace LD27
                     Location = loc,
                     Range = player.Range,
                     Direction = (float)player.Direction,
-                    Speed = 4
+                    Speed = 6
 
                 });
                 player.Set("slowed", player.Speed);
@@ -138,9 +140,9 @@ namespace LD27
                 startTime = -1;
             }
 
-            if (kbdState.IsKeyDown(Keys.X) && !player.Is("slowed"))
+            if (kbdState.IsKeyDown(Keys.X) && !player.Is("attacking"))
             {
-                worldMap.Player.Set("attacking", 0.5f);
+                worldMap.Player.Set("attacking", 2f);
                 worldMap.Forces.Add(new Attack()
                 {
                     Visual = Force.Visuals.Test2,

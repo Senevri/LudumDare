@@ -84,10 +84,12 @@ namespace LD27
         private void CreateEffect()
         {
             Effect = new BasicEffect(this.GraphicsDevice);
-            Effect.EnableDefaultLighting();
+            //Effect.EnableDefaultLighting();
+            /*
             Effect.DirectionalLight0.Enabled = false;
             Effect.DirectionalLight1.Enabled = false;
             Effect.DirectionalLight2.Enabled = false;
+             */
         }
 
         public SoundEffectInstance PlaySound(string sound) {
@@ -244,28 +246,13 @@ namespace LD27
             //renderQuads.AddRange(sprites.Values);
             var player = sprites["player"];
             if (WorldMap.Player.Is("attacking"))
-            {
-                //WorldMap.Player.Unset("attacking");
-                /*f (player.Animation=="attack" && !player.Animations.Last().Playing) // attack doesn't loop
-                {
-                 
-                    player.Animations.Clear();
-                    //player.Animation = "idle";
-                    player.AddAnimation("attack", WorldMap.Player.Location, WorldMap.Player.ID);
-                }
-                else
-                {
-                    player.Animations.Clear();
-                    //player.Animation = "attack";
-                    player.AddAnimation("attack", WorldMap.Player.Location, WorldMap.Player.ID);
-                }*/
+            {                
                 if (player.Animation == "idle")
                 {
                     player.Animations.Clear();
-                    player.AddAnimation("attack", WorldMap.Player.Location, WorldMap.Player.ID);
-                    WorldMap.Player.Unset("attacking");
-                }
-                
+                    player.AddAnimation("attack", WorldMap.Player.Location, WorldMap.Player.ID);             
+                }                
+                //WorldMap.Player.Unset("attacking");                                
             }
             else 
             {  

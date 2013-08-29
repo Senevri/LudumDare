@@ -139,11 +139,13 @@ namespace LD27
                             new Attack(worldMap.Player){ 
                                 Creator = creature, 
                                 Location = worldMap.Player.Location, 
-                                Duration = 15, 
+                                Duration = 20, 
                                 Damage = creature.Attack, 
-                                Range = creature.Range, 
+                                Range = creature.Range+16, 
                                 WorldMap = worldMap, 
-                                Visual = Force.Visuals.Bloody
+                                Visual = Force.Visuals.Bloody,
+                                Direction = (float)creature.Direction,
+                                Speed = 1, 
                             }
                         );
                 }
@@ -172,6 +174,7 @@ namespace LD27
                     Range = creature.Range+16,
                     Location = creature.GetMoveLocation(creature.Location.X, creature.Location.Y, creature.Direction, 32f),
                     WorldMap = worldMap,
+                    Duration = 20,
                     Visual = Force.Visuals.Bloody
                 });
             }
