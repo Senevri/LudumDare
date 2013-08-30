@@ -204,7 +204,7 @@ namespace LD27
         }
 
         
-        public Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] GetPositionedTile(TexturedQuad Tile, Vector2 Position, float scale=1) {                       
+        public Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] GetPositionedTile(TexturedQuad Tile, Vector2 Position, float scale=1, float angle = 0) {                       
             VertexPositionNormalTexture[] outVerts = new VertexPositionNormalTexture[6];
             for (int i = 0; i<Tile.Vertices.Length; i++) {                    
                 outVerts[i].TextureCoordinate = Tile.Vertices[i].TextureCoordinate;
@@ -216,6 +216,10 @@ namespace LD27
                 outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationZ(Rotation.Z));                    
                  */
                 outVerts[i].Position = Tile.Vertices[i].Position;
+                if (angle != 0) {
+                    outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationZ(-angle));                    
+                }
+
                 if (scale != 1)
                 {
                     outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateScale(scale));
@@ -226,9 +230,14 @@ namespace LD27
         }
 
 
-        internal Animation DefineAnimation(string p1, int[] p2, float delay = 0.500f, bool loop = true, float scale = 1)
+        internal Animation DefineAnimation(string p1, int[] p2, float delay = 0.500f, bool loop = true, float scale = 1, float alpha = 1)
         {
-            this.AnimationDefinitions.Add(p1, new Animation() { FrameIndexes = p2, Loop = loop, DelaySeconds = delay, ID=this.AnimationDefinitions.Count, Scale = scale});
+            this.AnimationDefinitions.Add(p1, new Animation() { 
+                FrameIndexes = p2, 
+                Loop = loop, 
+                DelaySeconds = delay, 
+                ID=this.AnimationDefinitions.Count, 
+                Scale = scale, Opacity = alpha});
             return AnimationDefinitions.Last().Value;
         }
 

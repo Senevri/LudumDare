@@ -202,6 +202,23 @@ namespace LD27
             
         }
 
+        public void SpawnCards(int p)
+        {
+            if (p > 5)
+            {
+                this.AddCard(Card.Types.Bomb);
+            }
+            if (p > 10)
+            {
+                this.AddCard(Card.Types.Heal);
+            }
+            if (p > 15)
+            {
+                this.AddCard(Card.Types.Sign);
+            }
+        }        
+
+
 
         internal void AddCard(Card.Types type)
         {

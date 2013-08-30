@@ -193,10 +193,10 @@ namespace LD27
             var sfx = AddSpriteSheet("sfx", Textures["sfx"], Vector2.Zero, false, false);
             sfx.Delay = 0.200f;
             sfx.DefineAnimation("row1", Enumerable.Range(0, 4).ToArray(), 0.200f, false);
-            sfx.DefineAnimation("row2", Enumerable.Range(8,6).ToArray(), 0.200f, false, 1.5f);
-            sfx.DefineAnimation("bloody", Enumerable.Range(16, 5).ToArray(), 0.300f, false);
-            sfx.DefineAnimation("explosion", Enumerable.Range(0, 7).ToArray(), 0.04f, false, 7);
-            sfx.DefineAnimation("beam", Enumerable.Range(24, 8).ToArray(), 0.200f, false);
+            sfx.DefineAnimation("row2", Enumerable.Range(7,6).ToArray(), 0.150f, false, 1.5f, 0.5f);
+            sfx.DefineAnimation("bloody", Enumerable.Range(15, 5).ToArray(), 0.300f, false);
+            sfx.DefineAnimation("explosion", Enumerable.Range(0, 7).ToArray(), 0.04f, false, 7, 0.7f);
+            sfx.DefineAnimation("beam", Enumerable.Range(23, 8).ToArray(), 0.200f, false, 1, 0.7f);
             //sfx.Animation = "row2";
 
             
@@ -259,14 +259,15 @@ namespace LD27
             delta = gameTime.TotalGameTime.TotalSeconds;
 
             namedQuads["map"].Texture = WorldMap.GetMapImage();
-              
-            foreach (var portal in WorldMap.Portals) {                
-                var v1 = PixelPositionToVector2((int)(portal.Location.X-WorldMap.X), (int)(portal.Location.Y-WorldMap.Y));
+            // portals rendered in wrong spots; why?  
+            foreach (var portal in WorldMap.Portals) {
+                //var v = PixelPositionToVector2((int)((loc.X - WorldMap.X) + loc.Width / 2), (int)((loc.Y - WorldMap.Y) + loc.Height / 2));
+                var v = PixelPositionToVector2((int)(portal.Location.X - WorldMap.X), (int)(portal.Location.Y - WorldMap.Y));
                 if (portal.isOpen) {                    
-                    sprites["tiles"].AddAnimation("portal", v1, portal.ID);                     
+                    sprites["tiles"].AddAnimation("portal", v, portal.ID);                     
                 }
                 if (portal.Destroyed) {
-                    sprites["misc"].AddAnimation("bigportal_destroyed", v1, portal.ID);
+                    sprites["misc"].AddAnimation("bigportal_destroyed", v, portal.ID);
                 }
             }
             sprites["tiles"].PruneUnusedAnimations(WorldMap.Portals.Where((x)=>(x.isOpen)).Select((x)=>(x.ID)));
@@ -388,6 +389,12 @@ namespace LD27
                 }
             
                 var sfxanim = sfx.AddAnimation(type, v, force.ID);
+                var atk = force as Attack;
+
+                if (null != atk) {
+                    sfxanim.Angle = atk.Direction;
+                }
+
                 if (force.IsApplied) {                    
                     if (!sfxanim.Playing) {
                         force.Remove = true;
@@ -431,6 +438,7 @@ namespace LD27
             vertexBuffer.SetData(verts.ToArray());
 
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
+            
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             GraphicsDevice.SetVertexBuffer(vertexBuffer);                       
 
@@ -455,8 +463,8 @@ namespace LD27
                 var sheet = kvpair.Value;
                 //Console.WriteLine("Animations for {0}: {1}", kvpair.Key, sheet.Animations.Count);
                 foreach (var anim in sheet.Animations)
-                {                    
-                    RenderVertices(GraphicsDevice, sheet.Sheet, sheet.GetPositionedTile(sheet.Tiles[anim.CurrentFrame], anim.Position, anim.Scale));
+                {
+                    RenderVertices(GraphicsDevice, sheet.Sheet, sheet.GetPositionedTile(sheet.Tiles[anim.CurrentFrame], anim.Position, anim.Scale, anim.Angle), anim.Opacity);
                 }
             }
 
@@ -474,10 +482,14 @@ namespace LD27
 
         }        
 
-        private void RenderVertices(Microsoft.Xna.Framework.Graphics.GraphicsDevice GraphicsDevice,Texture2D texture2D,VertexPositionNormalTexture[] vertices)
+        private void RenderVertices(Microsoft.Xna.Framework.Graphics.GraphicsDevice GraphicsDevice,Texture2D texture2D,VertexPositionNormalTexture[] vertices, float alpha = 1f)
         {
  	        Effect.Texture = null;
             Effect.Texture = texture2D;
+            if (alpha < 1f) {
+                Effect.GraphicsDevice.BlendState = BlendState.Additive;
+            }
+            Effect.Alpha = alpha;
             foreach (EffectPass pass in Effect.CurrentTechnique.Passes)
             {
                 pass.Apply();
@@ -493,6 +505,7 @@ namespace LD27
             Effect.World = worldMatrix;
             Effect.AmbientLightColor = Color.White.ToVector3();
             Effect.TextureEnabled = true;
+            
         }
 
         float prevSeconds = 0;

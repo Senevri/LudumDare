@@ -9,6 +9,8 @@ namespace LD27
     {
         public int ID { get; set; }
         public float Scale { get; set; }
+        public float Angle { get; set; }
+        public float Opacity { get; set; }
         public int[] FrameIndexes { get; set; }
         public float DelaySeconds { get; set; }
         public int CurrentFrameIndex { get; set; }
@@ -27,6 +29,7 @@ namespace LD27
             CurrentFrameIndex = 0;
             Loop = true;
             DelaySeconds = 0.200f;
+            Opacity = 1f;
         }
 
         public int getNextAllowedIndex(float gameTimeTotalSeconds) {
@@ -61,6 +64,7 @@ namespace LD27
                 /*CurrentFrame = this.CurrentFrame,*/ 
                 Loop =this.Loop, 
                 Position = this.Position, 
+                Opacity = this.Opacity,
                 ID = this.ID, Scale=this.Scale};
             newAnimation.FrameIndexes = new int[FrameIndexes.Length];
             Array.Copy(FrameIndexes, newAnimation.FrameIndexes, FrameIndexes.Length);
@@ -73,5 +77,7 @@ namespace LD27
             newAnimation.Position = v1;
             return newAnimation;
         }
+
+        
     }
 }

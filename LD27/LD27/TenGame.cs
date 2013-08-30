@@ -200,7 +200,7 @@ namespace LD27
                     Damage = 4 * player.Attack,
                     Location = AdjustVector2(worldMap.Viewport, screenw / 2, screenh / 2),
                     Range = player.Range * 1.5f,
-                    Duration = 10,
+                    Duration = 20,
                     Speed = 0
                 });
                 if (!player.Is("slowed")) {

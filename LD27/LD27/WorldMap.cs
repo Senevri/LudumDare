@@ -41,7 +41,9 @@ namespace LD27
             this.content = content;
             screenw = device.PresentationParameters.BackBufferWidth;
             screenh = device.PresentationParameters.BackBufferHeight;
-            EndGame = false;
+
+            // enable endgame for testing            
+            EndGame = true;
             
 
             renderTarget = new RenderTarget2D(
@@ -63,8 +65,6 @@ namespace LD27
             InitializePlayer();
             LoadMap("WorldMap.tmx");
 
-            // enable endgame for testing
-            //EndGame = true;
             
         }
 
@@ -111,7 +111,7 @@ namespace LD27
                         Portals.Add(new SpawnPortal()
                         {
                             CreatureTypes = new Creature.Types[] { Creature.Types.SMALL, Creature.Types.MEDIUM },
-                            Location = new Vector2(tiledobj.X + tiledobj.Width / 2, tiledobj.Y + tiledobj.Height / 2),
+                            Location = new Vector2(tiledobj.X + tiledobj.Width / 2, tiledobj.Y + tiledobj.Height / 2),                           
                             Size = random.Next(1, 6),
                             isOpen = false
                         });
@@ -210,8 +210,16 @@ namespace LD27
 
                 previousUpdateTotalSeconds = gameTime.TotalGameTime.TotalSeconds;
                 if (this.EndGame) {
-                    var a = Math.Abs(this.Viewport.X - this.X);
-                    var b = Math.Abs(this.Viewport.Y - this.Y);
+                    float x = 0, y= 0;
+
+                    foreach (Location l in Locations) { 
+                        if (l.Type == "EndGame") {
+                            x = l.X;
+                            y = l.Y;
+                        }
+                    }
+                    var a = Math.Abs(this.Viewport.X - x);
+                    var b = Math.Abs(this.Viewport.Y - y);
                     if ((32 > a) && (32 > b)) {
                         this.Forces.Clear();
                         this.Creatures.Clear();
@@ -237,27 +245,29 @@ namespace LD27
         {
            
             TerrorLevel += Creatures.Count;
-            // each open portal spawns creatures.                
+            // each open spawns creatures.                
             Console.WriteLine("Time: {2}, Player Kills: {0} | Terrorlevel: {1}", Player.Kills, TerrorLevel, time);
             //spawn cards
-            SpawnCards(Player.Kills);
+            Player.SpawnCards(Player.Kills);
 
             totalKills += Player.Kills;
             Player.Kills = 0;
+            var validPortals = this.Portals.Where((p) => (!p.Destroyed)).ToList();
 
-            if (this.Portals.Count > 0)
+            if (validPortals.Count > 0)
             {
-                int openingPortalIndex = random.Next(0, this.Portals.Count - 1);
-                if (this.Portals[openingPortalIndex].isOpen)
+                
+                int openingPortalIndex = random.Next(0, validPortals.Count - 1);
+                if (validPortals[openingPortalIndex].isOpen)
                 {
-                    this.Portals[openingPortalIndex].Size += 1;
+                    validPortals[openingPortalIndex].Size += 1;
                 }
                 else
                 {
-                    this.Portals[openingPortalIndex].isOpen = true;
+                    validPortals[openingPortalIndex].isOpen = true;
                 }
-                var p = this.Portals[openingPortalIndex];
-                Console.WriteLine("DOOOOM! at {0}, {1}", p.Location.X, p.Location.Y);
+                var portal = validPortals[openingPortalIndex];
+                Console.WriteLine("DOOOOM! at {0}, {1}", portal.Location.X, portal.Location.Y);
             } 
 
             /*foreach (var grp in map.ObjectGroups)
@@ -277,7 +287,7 @@ namespace LD27
                 creature.Direction = random.Next(0, 360) * Math.PI / 180;
             }
             WinCondition = true;
-            foreach (var portal in this.Portals)
+            foreach (var portal in validPortals)
             {
                 
                 if (portal.isOpen)
@@ -301,25 +311,7 @@ namespace LD27
             time = 0;
             
         }
-
-
-        // FIXME: Who is the correct owner? 
-        private void SpawnCards(int p)
-        {
-            if (p > 5) {
-                Player.AddCard(Card.Types.Bomb);                
-            }
-            if (p > 10) {
-                Player.AddCard(Card.Types.Heal);                            
-            }
-            if (p > 15) {
-                Player.AddCard(Card.Types.Sign);                            
-            }
-        }
-
         
-
-
         public RenderTarget2D GetMapImage() {
             //var ticks = DateTime.Now.Ticks;
             device.SetRenderTarget(renderTarget);
@@ -328,7 +320,7 @@ namespace LD27
             device.Clear(Color.DarkGray);
             SpriteBatch batch = new SpriteBatch(device);
             batch.Begin();
-            map.Draw(batch, new Rectangle(0,0,800,480), Viewport);
+            map.Draw(batch, new Rectangle(0,0,(int)(800),480), Viewport);
             batch.End();
             batch.Dispose();
             device.SetRenderTarget(null);
@@ -355,7 +347,7 @@ namespace LD27
                 position.X = (int)Math.Round((Target.X+shiftx)/map.TileWidth);
                 position.Y = (int)Math.Round((Target.Y+shifty)/map.TileHeight);
                 //get tile position in reference to Target location (in pixels) 
-                if (position.X < 0 || position.Y < 0 || position.X > map.Width || position.Y > map.Height) {
+                if (position.X < 0 || position.Y < 0 || position.X >= map.Width || position.Y >= map.Height) {
                     return false;
                 }
                 int tile = layer.GetTile(position.X, position.Y);
