@@ -80,6 +80,7 @@ namespace LD27
             Textures.Add("losescreen", Content.Load<Texture2D>("endscreen_bad"));
             Textures.Add("terrorscreen", Content.Load<Texture2D>("endscreen_terror"));
             Textures.Add("helpscreen", Content.Load<Texture2D>("helpscreen"));
+            Textures.Add("winscreen", Content.Load<Texture2D>("endscreen_win"));
 
 
 
@@ -101,16 +102,58 @@ namespace LD27
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
-        {
-            //var ticks = DateTime.Now.Ticks;
-
+        {             
             Creature player = worldMap.Player;
-            if (player.Is("slowed")) {
-                player.Speed = player.Get("slowed", 0);
+            if (worldMap.WinCondition || player.Health <= 0) {
+                HandleKeyboard();
+                return;
             }
+            
 
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+
+            if (player.Is("slowed"))
+            {
+                player.Speed = player.Get("slowed", 0);
+            }
+            Vector3 shift = HandleKeyboard();
+
+
+                float aspect = GraphicsDevice.Viewport.AspectRatio;
+            
+
+            float targetX = engine.Camera.X + shift.X;
+            float targetY = engine.Camera.Y + shift.Y;
+            float xpixels = (targetX/aspect)*screenw/2;
+            float ypixels = (targetY) * screenh / 2;
+
+
+            var worldMapTarget = new Vector2(worldMap.X + xpixels, worldMap.Y - ypixels);
+            if (!worldMap.Loading)
+            {
+                if (worldMap.IsValidPath(worldMap.Viewport, worldMapTarget, (screenw / 2) - 32, (screenh / 2) - 32))
+                {
+
+                    engine.Camera = new Vector3(engine.Camera.X + shift.X, engine.Camera.Y + shift.Y, engine.Camera.Z + shift.Z);
+                    engine.Target = new Vector3(engine.Target.X + shift.X, engine.Target.Y + shift.Y, -1);
+
+                    worldMap.Viewport = worldMapTarget;
+
+                    // keep player  at the center of the screen.
+                    worldMap.Player.Location = worldMap.Viewport;
+                }
+            }
+
+            base.Update(gameTime);
+            engine.Update(gameTime);
+            base.Draw(gameTime);
+            //Console.WriteLine("TenGame Update time: {0}", DateTime.Now.Ticks - ticks);
+        }
+
+        private Vector3 HandleKeyboard()
+        {
+            var player = worldMap.Player;
             KeyboardState kbdState = Keyboard.GetState();
 
             float xshift = 0;
@@ -126,12 +169,13 @@ namespace LD27
                 worldMap.Forces.Add(new Attack()
                 {
                     Visual = Force.Visuals.Test,
+                    Sound = Force.Sounds.Flame,
                     Creator = worldMap.Player,
                     WorldMap = worldMap,
                     Damage = player.Attack / 2,
                     Location = loc,
                     Range = player.Range,
-                    Duration = 40,
+                    Duration = 30,
                     Direction = (float)player.Direction,
                     Speed = 7
 
@@ -147,11 +191,12 @@ namespace LD27
                 worldMap.Forces.Add(new Attack()
                 {
                     Visual = Force.Visuals.Test2,
+                    Sound = Force.Sounds.Default,
                     Creator = worldMap.Player,
                     WorldMap = worldMap,
                     Damage = 4 * player.Attack,
                     Location = AdjustVector2(worldMap.Viewport, screenw / 2, screenh / 2),
-                    Range = player.Range,
+                    Range = player.Range * 1.5f,
                     Duration = 10,
                     Speed = 0
                 });
@@ -162,7 +207,8 @@ namespace LD27
 
 
             player.Set("usingCard", player.Get("usingCard") - 0.1f);
-            if (kbdState.IsKeyDown(Keys.Space)) {
+            if (kbdState.IsKeyDown(Keys.Space))
+            {
                 if (!player.Is("usingCard") && player.Cards.Count > 0)
                 {
                     player.Set("usingCard");
@@ -174,9 +220,10 @@ namespace LD27
                 }
             }
 
-            if (kbdState.IsKeyDown(Keys.Up)) {
-                yshift += player.Speed/100f;
-                player.Direction = -Math.PI/2;
+            if (kbdState.IsKeyDown(Keys.Up))
+            {
+                yshift += player.Speed / 100f;
+                player.Direction = -Math.PI / 2;
             }
 
             if (kbdState.IsKeyDown(Keys.Down))
@@ -207,48 +254,18 @@ namespace LD27
                 zshift += 0.05f;
             }
 
-            
-            if (kbdState.IsKeyDown(Keys.Enter)) {
-                if (player.Health <= 0)
+
+            if (kbdState.IsKeyDown(Keys.Enter))
+            {
+                if (player.Health <= 0 || worldMap.WinCondition)
                 {
                     //player.Health = 100;
                     engine.Dispose();
                     engine = null;
-                    this.LoadContent();
-                    return;
+                    this.LoadContent();                    
                 }
             }
-
-
-                float aspect = GraphicsDevice.Viewport.AspectRatio;
-            
-
-            float targetX = engine.Camera.X + xshift;
-            float targetY = engine.Camera.Y + yshift;
-            float xpixels = (targetX/aspect)*screenw/2;
-            float ypixels = (targetY) * screenh / 2;
-
-
-            var worldMapTarget = new Vector2(worldMap.X + xpixels, worldMap.Y - ypixels);
-            if (!worldMap.Loading)
-            {
-                if (worldMap.IsValidPath(worldMap.Viewport, worldMapTarget, (screenw / 2) - 32, (screenh / 2) - 32))
-                {
-
-                    engine.Camera = new Vector3(engine.Camera.X + xshift, engine.Camera.Y + yshift, engine.Camera.Z + zshift);
-                    engine.Target = new Vector3(engine.Target.X + xshift, engine.Target.Y + yshift, -1);
-
-                    worldMap.Viewport = worldMapTarget;
-
-                    // keep player  at the center of the screen.
-                    worldMap.Player.Location = worldMap.Viewport;
-                }
-            }
-
-            base.Update(gameTime);
-            engine.Update(gameTime);
-            base.Draw(gameTime);
-            //Console.WriteLine("TenGame Update time: {0}", DateTime.Now.Ticks - ticks);
+            return new Vector3(xshift, yshift, zshift);
         }
 
         public static Vector2 AdjustVector2(Vector2 vector2, int p1, int p2)
@@ -270,12 +287,16 @@ namespace LD27
             this.Window.Title = string.Format("LD27 (FPS: {0})", fps);
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            if (worldMap.Player.Health <= 0) {
+
+            if (worldMap.Player.Health <= 0 ||worldMap.WinCondition) {
                 Texture2D texture;
                 if (worldMap.Player.Is("TerrorDeath")) {
                     texture = Textures["terrorscreen"];
                 }else {
                     texture = Textures["losescreen"];
+                }
+                if (worldMap.WinCondition) {
+                    texture = Textures["winscreen"];
                 }
                 
                 spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
@@ -296,13 +317,13 @@ namespace LD27
                     new Rectangle(0, 0, 64, 64), Color.White, 0, Vector2.Zero,
                     SpriteEffects.None, 0);
                 spriteBatch.Draw(flatTextures,
-                    new Rectangle(GraphicsDevice.Viewport.Width - 11, 3, 8, (int)(GraphicsDevice.Viewport.Height - 6) * (int)worldMap.TerrorLevel / 100),
+                    new Rectangle(GraphicsDevice.Viewport.Width - 11, 3, 8, (int)(GraphicsDevice.Viewport.Height - 6) * (int)worldMap.TerrorLevel / WorldMap.MaxTerror),
                     new Rectangle(64, 0, 128, 64), Color.Purple, 0, Vector2.Zero,
                     SpriteEffects.None, 0);
 
                 if (startTime > 0 && (gameTime.TotalGameTime.TotalSeconds - startTime) < 9) {
                     spriteBatch.Draw(Textures["helpscreen"], new Rectangle(32, 32, GraphicsDevice.Viewport.Width-64, GraphicsDevice.Viewport.Height-64),
-                    new Rectangle(0, 0, 320, 200), Color.White*0.7f);                                 
+                    new Rectangle(0, 0, 320, 200), Color.White*0.8f);                                 
                 }
                 spriteBatch.End();
             }

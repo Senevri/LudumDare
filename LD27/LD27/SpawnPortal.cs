@@ -60,7 +60,7 @@ namespace LD27
             Random random = new Random();
             var out_list = new List<Creature>();
             for (var i = 0; i < Size; i++) {
-                var type = this.CreatureTypes[random.Next(0, this.CreatureTypes.Length - 1)];
+                var type = this.CreatureTypes[random.Next(0, this.CreatureTypes.Length)];
                 //type = Creature.Types.MEDIUM;
                 out_list.Add(new Creature() { 
                     Attack = 1+(int)type,

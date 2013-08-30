@@ -32,7 +32,9 @@ namespace LD27
         private int screenh;
         private int totalKills = 0;
         public bool EndGame { get; set; }
-
+        public bool WinCondition { get; set; }
+        public const int MaxTerror = 200;
+        public const int TotalKillsForEndGame = 100;
 
         public WorldMap(GraphicsDevice device, Microsoft.Xna.Framework.Content.ContentManager content) {
             this.device = device;
@@ -40,7 +42,7 @@ namespace LD27
             screenw = device.PresentationParameters.BackBufferWidth;
             screenh = device.PresentationParameters.BackBufferHeight;
             EndGame = false;
-            Portals = new List<SpawnPortal>();
+            
 
             renderTarget = new RenderTarget2D(
                 device,
@@ -52,31 +54,38 @@ namespace LD27
                 device.PresentationParameters.BackBufferFormat,
                 DepthFormat.Depth24);
 
+            this.Portals = new List<SpawnPortal>();
             this.Creatures = new List<Creature>();
             this.Forces = new List<Force>();
             this.Locations = new List<Location>();
-            
-            
-            Player = new Creature() { 
-                Type = Creature.Types.PLAYER, 
-                Location = new Vector2(0, 0), 
-                Health = 100, 
-                Attack = 10, 
-                ID = 9999, 
-                Range  =32, 
-                Speed = 7                
-            };
-            Player.AddCard(Card.Types.Heal);
-            Player.AddCard(Card.Types.Bomb);
-            Player.AddCard(Card.Types.Heal);
-            Player.AddCard(Card.Types.Bomb);
 
+
+            InitializePlayer();
+            LoadMap("WorldMap.tmx");
+
+            // enable endgame for testing
+            //EndGame = true;
+            
+        }
+
+        private void InitializePlayer()
+        {
+            Player = new Creature()
+            {
+                Type = Creature.Types.PLAYER,
+                Location = new Vector2(0, 0),
+                Health = 100,
+                Attack = 10,
+                ID = 9999,
+                Range = 32,
+                Speed = 7
+            };
+            Player.AddCard(Card.Types.Bomb);
+            Player.AddCard(Card.Types.Heal);
+            
 
             //Player.AIScript = Creature.CreateAttackIfInRange;
             Creatures.Add(Player);
-            LoadMap("WorldMap.tmx");
-            EndGame = true;
-            
         }
 
         public bool Loading { get; set;  }
@@ -144,7 +153,16 @@ namespace LD27
             }
 
             if (timeDelta > 0.025) {//40fps 
+                // infinte bombs for testin
+                /*if (Player.Cards.Count == 0) {
+                    Player.AddCard(Card.Types.Sign);
+                }*/
+
                 foreach (var creature in this.Creatures) {
+                    if (creature.Is("dead")) {
+                        continue;
+                    }
+                    
                     if (creature.Type != Creature.Types.CIVILIAN && creature.Type != Creature.Types.PLAYER) { 
                         //move creature; pause just before deadline
                         if (time < 9.5||this.Disaster) {                            
@@ -163,27 +181,33 @@ namespace LD27
                 }
 
                 this.Forces = this.Forces.Where((f) => (!f.Remove)).ToList();
-                this.Creatures = this.Creatures.Where((c) => (c.Health > 0)).ToList();
-                this.Portals = this.Portals.Where((p) => (!p.Destroyed)).ToList();
+                this.Creatures = this.Creatures.Where((c) => ((c.Is("dead")) ||(c.Health > 0) )).ToList();
+                //this.Portals = this.Portals.Where((p) => (!p.Destroyed)).ToList();
+                var dcc = this.Creatures.Where((c) => (c.Is("dead"))).Count();
+                if (dcc > 0)
+                {
+                    Console.WriteLine("Dead creatures: {0}", this.Creatures.Where((c) => (c.Is("dead"))).Count()); ;
+                }
 
                 previousUpdateTotalSeconds = gameTime.TotalGameTime.TotalSeconds;
                 if (this.EndGame) {
-                    /*if (32 < Math.Abs(this.Viewport.X - this.X) && (32 < Math.Abs(this.Viewport.Y - this.Y))) {
+                    var a = Math.Abs(this.Viewport.X - this.X);
+                    var b = Math.Abs(this.Viewport.Y - this.Y);
+                    if ((32 > a) && (32 > b)) {
                         this.Forces.Clear();
                         this.Creatures.Clear();
                         this.Portals.Clear();
                         this.Locations.Clear();
                         LoadMap("BossFight.tmx");                                                
-                    } */
-                }
+                    }                }
 
             }
-            if (TerrorLevel >= 100) {
+            if (TerrorLevel >= MaxTerror) {
                 Player.Health = 0;
                 Player.Set("TerrorDeath");
                 //System.Diagnostics.Debugger.Break();
             }
-            if (totalKills >= 100) {
+            if (totalKills >= TotalKillsForEndGame) {
                 
                 EndGame = true;
             }
@@ -202,11 +226,20 @@ namespace LD27
             totalKills += Player.Kills;
             Player.Kills = 0;
 
-            int openingPortalIndex = random.Next(0, this.Portals.Count - 1);
-            this.Portals[openingPortalIndex].isOpen = true;
-            var p = this.Portals[openingPortalIndex];
-            Console.WriteLine("DOOOOM! at {0}, {1}", p.Location.X, p.Location.Y);
-
+            if (this.Portals.Count > 0)
+            {
+                int openingPortalIndex = random.Next(0, this.Portals.Count - 1);
+                if (this.Portals[openingPortalIndex].isOpen)
+                {
+                    this.Portals[openingPortalIndex].Size += 1;
+                }
+                else
+                {
+                    this.Portals[openingPortalIndex].isOpen = true;
+                }
+                var p = this.Portals[openingPortalIndex];
+                Console.WriteLine("DOOOOM! at {0}, {1}", p.Location.X, p.Location.Y);
+            } 
 
             /*foreach (var grp in map.ObjectGroups)
             {
@@ -224,9 +257,10 @@ namespace LD27
             {
                 creature.Direction = random.Next(0, 360) * Math.PI / 180;
             }
-
+            WinCondition = true;
             foreach (var portal in this.Portals)
             {
+                
                 if (portal.isOpen)
                 {
                     TerrorLevel += 1;
@@ -239,6 +273,9 @@ namespace LD27
                     {
                         portal.Size += 1f;
                     }
+                }
+                if (!portal.Destroyed) {
+                    WinCondition = false;
                 }
             }
 

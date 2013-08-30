@@ -215,7 +215,11 @@ namespace LD27
                 outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationY(Rotation.Y));
                 outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationZ(Rotation.Z));                    
                  */
-                outVerts[i].Position = Vector3.Transform(Tile.Vertices[i].Position, Matrix.CreateScale(scale));
+                outVerts[i].Position = Tile.Vertices[i].Position;
+                if (scale != 1)
+                {
+                    outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateScale(scale));
+                } 
                 outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateTranslation(new Vector3(Position.X, Position.Y, -1.0f)));                                    
             }
             return outVerts;
@@ -228,7 +232,7 @@ namespace LD27
             return AnimationDefinitions.Last().Value;
         }
 
-        internal void AddAnimation(string p, Vector2 v1, int id = -1)
+        internal Animation AddAnimation(string p, Vector2 v1, int id = -1, bool reset = false)
         {
             if (-1 == id) { id = this.Animations.Count; }
             // recycle
@@ -238,28 +242,41 @@ namespace LD27
                     this._animations[id].Position = v1;
                 } else {
                     this._animations[id] = this.AnimationDefinitions[p].PositionCopy(v1);
+                    this._animations[id].CurrentFrameIndex = 0;
+                    this._animations[id].Playing = true;
                 }
             }
             else
             {
-                this._animations.Add(id, this.AnimationDefinitions[p].PositionCopy(v1));                
+                this._animations.Add(id, this.AnimationDefinitions[p].PositionCopy(v1));
+                this._animations[id].Playing = true;
             }
-            this._animations[id].Playing=true;
+            
             this._currentAnimation = p;
+            return this._animations[id];
         }
 
-        internal void PruneUnusedAnimations(IEnumerable<int> enumerable)
+        internal void PruneUnusedAnimations(IEnumerable<int> enumerable, bool KeepUnlooped= false)
         {
             if (enumerable.IsAny())
             {
                 //this._animations = enumerable.ToDictionary((i) => (i), (i) => (this._animations[i]));
-                this._animations = this._animations.Where((kv)=>(enumerable.Contains(kv.Key))).ToDictionary(x => x.Key, x => x.Value);
+                if (!KeepUnlooped)
+                {
+                    this._animations = this._animations.Where((kv) => (enumerable.Contains(kv.Key))).ToDictionary(x => x.Key, x => x.Value);
+                }
+                else {
+                    this._animations = this._animations.Where((kv) => (enumerable.Contains(kv.Key)||(!kv.Value.Loop && kv.Value.Playing))).ToDictionary(x => x.Key, x => x.Value);
+                }
                                 
             }
             else 
             {
                 this._animations.Clear();
             }
+        }
+        internal void ClearAnimations() {
+            this._animations.Clear();
         }
     }
 

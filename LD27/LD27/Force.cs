@@ -11,7 +11,7 @@ namespace LD27
         public static int lastID;
         public int ID { get; set; } 
         public enum Visuals { Test, Test2, Bloody, Explosion }
-        public enum Sounds { Default, Flame };
+        public enum Sounds { Default, Flame, Explosion };
         protected bool _isApplied;
         public bool IsApplied { get {
             return _isApplied;
@@ -66,7 +66,9 @@ namespace LD27
         public new void Apply() {
             var self = (this as Attack);
             if (null == _creature) { 
-                _creature = WorldMap.Creatures.FirstOrDefault((c)=>((WorldMap.GetDistance(self.Location, c.Location) <= self.Range) && c.ID != Creator.ID));
+                _creature = WorldMap.Creatures.OrderBy((c)=>(WorldMap.GetDistance(self.Location, c.Location)))
+                    .FirstOrDefault((c)=>((WorldMap.GetDistance(self.Location, c.Location) <= self.Range) && c.ID != Creator.ID
+                        && !c.Is("dead")));
             }
             if (null == _creature) {
                 Duration -= 1; //decay in 20 frames at 40fps.
@@ -84,6 +86,7 @@ namespace LD27
                 self._creature.Set("hurt");
                 if (self._creature.Health <= 0)
                 {
+                    self._creature.Set("dead", 4);
                     Creator.Kills += 1;
                 }
                 //self.Remove = true;
@@ -98,17 +101,27 @@ namespace LD27
 
         public Explosion() {
             _apply = this.ExplosionFunc;
-            this.Visual = Visuals.Explosion;            
+            this.Visual = Visuals.Explosion;
+            this.Sound = Force.Sounds.Explosion;
         }
 
         public void ExplosionFunc() {
             var self = this as Explosion;
+            self.Duration -= 1;
+            if (this.IsApplied) {
+
+                return;
+            }
             WorldMap.Creatures.ForEach((c) =>
             {
                 if ((c.ID != this.Creator.ID) &&
-                    (WorldMap.GetDistance(c.Location, this.Creator.Location)<=this.Range))
+                    (WorldMap.GetDistance(c.Location, this.Location)<=this.Range))
                 {
-                    c.Health -= this.Damage;                    
+                    c.Health -= this.Damage;
+                    if (c.Health <= 0) {
+                        c.Set("dead", 4);
+                        Creator.Kills++;
+                    }
                 }
             });
             self._isApplied = true;

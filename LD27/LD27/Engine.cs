@@ -95,21 +95,27 @@ namespace LD27
         public SoundEffectInstance PlaySound(string sound) {
             if (!Sounds.ContainsKey(sound)) { return null; }
             var instance = Sounds[sound].CreateInstance();
-            instance.Volume = 0.5f;
+            instance.Volume = 0.3f;
+            instance.IsLooped = false;
             instance.Play();
             return instance;
         }
 
         private float  defaultScale = 64f / 480f;
 
+        internal void AddSound(string name, string resource) 
+        {
+            Sounds.Add(name, Content.Load<SoundEffect>(resource));            
+        }
+
         /**
          * LoadContent
          */
         internal void LoadContent()
         {
-            //SetupEffect();            
             int screenw = GraphicsDevice.Viewport.Bounds.Width;
             int screenh = GraphicsDevice.Viewport.Bounds.Height;
+            //load textures
             Textures.Add("test", Content.Load<Texture2D>("testTexture"));
             Textures.Add("bmpFont", Content.Load<Texture2D>("bmpFont"));
             Textures.Add("mapRender", WorldMap.GetMapImage());
@@ -119,9 +125,12 @@ namespace LD27
             Textures.Add("sfx", Content.Load<Texture2D>("specialeffects"));
             Textures.Add("misc", Content.Load<Texture2D>("misctiles"));
 
+            // load sounds
             Sounds.Add("hurt", Content.Load<SoundEffect>("Hit_Hurt"));
             Sounds.Add("timer", Content.Load<SoundEffect>("Timer"));
             Sounds.Add("attack", Content.Load<SoundEffect>("Laser_Shoot"));
+            AddSound("flame", "Flame2");
+            AddSound("explosion", "Explosion");
 
 
 
@@ -148,6 +157,7 @@ namespace LD27
             misc.SetTileSize(128, 128);
             misc.Delay = 0.1f;
             misc.DefineAnimation("bigportal", Enumerable.Range(4, 4).ToArray());
+            misc.DefineAnimation("bigportal_destroyed", new int[] { 8, 9 }, 0.200f, true, 0.5f);
             //misc.Animations.Add(misc.AnimationDefinitions.First().Value.Copy());
             
             
@@ -168,6 +178,11 @@ namespace LD27
             enemies.DefineAnimation("medium", new int[] { 8, 9 });
             enemies.DefineAnimation("large", new int[] { 16, 17 });
             enemies.DefineAnimation("itcomes", new int[] { 24, 25, 26 });
+            enemies.DefineAnimation("small_dead", new int[] { 2, 3 }, 0.5f, false);
+            enemies.DefineAnimation("medium_dead", new int[] { 4, 5 }, 0.5f, false);
+            enemies.DefineAnimation("large_dead", new int[] { 18, 19 }, 0.5f, false);
+            enemies.DefineAnimation("itcomes_dead", new int[] { 27, 28 }, 0.5f, false);
+            
             enemies.DefineAnimation("test", Enumerable.Range(0, 64).ToArray());
             //enemies.Animation  ="test";            
             
@@ -175,16 +190,18 @@ namespace LD27
             
             var sfx = AddSpriteSheet("sfx", Textures["sfx"], Vector2.Zero, false, false);
             sfx.Delay = 0.200f;
-            sfx.DefineAnimation("row1", Enumerable.Range(0, 7).ToArray(), 0.250f);
-            sfx.DefineAnimation("row2", Enumerable.Range(8,6).ToArray(), 0.200f);
-            sfx.DefineAnimation("bloody", Enumerable.Range(16, 5).ToArray(), 0.300f);
-            sfx.DefineAnimation("explosion", Enumerable.Range(0, 7).ToArray(), 0.250f, false, 5);
+            sfx.DefineAnimation("row1", Enumerable.Range(0, 4).ToArray(), 0.200f, false);
+            sfx.DefineAnimation("row2", Enumerable.Range(8,6).ToArray(), 0.200f, false, 1.5f);
+            sfx.DefineAnimation("bloody", Enumerable.Range(16, 5).ToArray(), 0.300f, false);
+            sfx.DefineAnimation("explosion", Enumerable.Range(0, 7).ToArray(), 0.04f, false, 7);
             //sfx.Animation = "row2";
 
             
             timer.DefineAnimation("timer", Enumerable.Range(32, 10).ToArray(), 1f);
             System.Diagnostics.Debug.Assert(timer.AnimationDefinitions["timer"].FrameIndexes.Contains(41));            
-            timer.Animation = "timer";            
+            timer.Animation = "timer";
+
+            vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, namedQuads.Count * 6, BufferUsage.WriteOnly);
         }
         
 
@@ -243,10 +260,13 @@ namespace LD27
             foreach (var portal in WorldMap.Portals) {                
                 var v1 = PixelPositionToVector2((int)(portal.Location.X-WorldMap.X), (int)(portal.Location.Y-WorldMap.Y));
                 if (portal.isOpen) {                    
-                    sprites["tiles"].AddAnimation("portal", v1);                     
-                }                
+                    sprites["tiles"].AddAnimation("portal", v1, portal.ID);                     
+                }
+                if (portal.Destroyed) {
+                    sprites["misc"].AddAnimation("bigportal_destroyed", v1, portal.ID);
+                }
             }
-            sprites["tiles"].PruneUnusedAnimations(WorldMap.Portals.Select((x)=>(x.ID)));
+            sprites["tiles"].PruneUnusedAnimations(WorldMap.Portals.Where((x)=>(x.isOpen)).Select((x)=>(x.ID)));
             
             //renderQuads.AddRange(sprites.Values);
             var player = sprites["player"];
@@ -274,7 +294,8 @@ namespace LD27
             var enemies = sprites["enemies"];
             //enemies.Current = 0;
             //enemies.SetTileToCurrent(GraphicsDevice);            
-
+            sprites["enemies"].PruneUnusedAnimations(WorldMap.Creatures.Select((i) => (i.ID)), true);
+            
             foreach (var enemy in WorldMap.Creatures) {
                 var enemylocation = PixelPositionToVector2((int)(enemy.Location.X - WorldMap.X), (int)(enemy.Location.Y - WorldMap.Y));
                 string type = string.Empty;
@@ -302,20 +323,34 @@ namespace LD27
                 }
                 if (!type.Equals(string.Empty))
                 {
-                    enemies.AddAnimation(type, enemylocation, enemy.ID);
+                    bool reset = false;
+                    if (enemy.Is("dead"))
+                    {
+                        type = string.Format("{0}_dead", type);
+                        enemy.Set("dead", enemy.Get("dead") - 0.1f);                        
+                        reset = true;
+                        enemies.AddAnimation(type, enemylocation, enemy.ID, reset);
+                    }
+                    else
+                    {
+
+                        enemies.AddAnimation(type, enemylocation, enemy.ID, reset);
+                    }
                 }                
                 
             }
-            sprites["enemies"].PruneUnusedAnimations(WorldMap.Creatures.Select((i) => (i.ID)));
+
+            
+            
 
             foreach (var loc in WorldMap.Locations) {
                 if (WorldMap.EndGame && loc.Type == "EndGame") {
                     var v = PixelPositionToVector2((int)((loc.X - WorldMap.X) + loc.Width/2), (int)((loc.Y - WorldMap.Y) + loc.Height/2));
                     var misc = sprites["misc"];
-                    misc.AddAnimation("bigportal", v);                    
+                    misc.AddAnimation("bigportal", v, 1234);                    
                     }
             }
-            sprites["misc"].PruneUnusedAnimations(WorldMap.Locations.Select((i) => (i.ID)));
+            //sprites["misc"].PruneUnusedAnimations(WorldMap.Locations.Select((i) => (i.ID)));
 
             var sfx = sprites["sfx"];
             //Console.WriteLine("sfx count: {0}, creature count: {1}", WorldMap.Forces.Count, WorldMap.Creatures.Count);
@@ -335,21 +370,25 @@ namespace LD27
                         v = TenGame.AdjustVector2(WorldMap.Viewport, screenw / 2, screenh / 2);
                         break;
                     case Force.Visuals.Explosion:
-                        type = "explosion";                        
+                        type = "explosion";
+                        //v = TenGame.AdjustVector2(WorldMap.Viewport, TenGame.screenw / 2, TenGame.screenh / 2);
                         break;                    
                     default:
                         sfx.Animation = string.Empty;
                         break;
                 }
             
-                sfx.AddAnimation(type, v, force.ID);
-                if (force.IsApplied) {
-                    force.Remove = true;
+                var sfxanim = sfx.AddAnimation(type, v, force.ID);
+                if (force.IsApplied) {                    
+                    if (!sfxanim.Playing) {
+                        force.Remove = true;
+                    }                                        
                 }
             }
             sprites["sfx"].PruneUnusedAnimations(WorldMap.Forces.Select((i) => (i.ID)));
 
-            sprites["cards"].PruneUnusedAnimations(WorldMap.Player.Cards.Select((i) => ((int)i.Type)));
+            //sprites["cards"].PruneUnusedAnimations(WorldMap.Player.Cards.Select((i) => ((int)i.Type)));
+            sprites["cards"].ClearAnimations();
             int xshift = 0;
             foreach (var card in WorldMap.Player.Cards) {
                 string type = string.Empty;
@@ -503,19 +542,42 @@ namespace LD27
                 WorldMap.Player.Set("hurt", 0);
             }
             if (WorldMap.Forces.Count > 0) {
-                if (null != attackSound)
+                foreach (var force in WorldMap.Forces)
                 {
-                    if (attackSound.State == SoundState.Stopped) {                        
-                        attackSound.Play();
+                    string sound = String.Empty;
+                    switch (force.Sound) {
+                        case Force.Sounds.Default:
+                            sound = "attack";
+                            break;
+                        case Force.Sounds.Flame:
+                            sound = "flame";
+                            break;
+                        case Force.Sounds.Explosion:
+                            sound = "explosion";
+                            break;
                     }
-                }
-                else {
-                    attackSound = PlaySound("attack");
+
+                    if (null == attackSound) {
+                        attackSound = new Dictionary<Force.Sounds, SoundEffectInstance>();
+                    
+                    }
+
+                    if (attackSound.ContainsKey(force.Sound))
+                    {
+                        if (attackSound[force.Sound].State == SoundState.Stopped)
+                        {
+                            attackSound[force.Sound].Play();
+                        }
+                    }
+                    else
+                    {
+                        attackSound.Add(force.Sound, PlaySound(sound));
+                    }        
                 }
             }
         }
 
-        SoundEffectInstance attackSound=null;
+        Dictionary<Force.Sounds, SoundEffectInstance> attackSound=null;
 
         public void Dispose() {
             Dispose(true);
