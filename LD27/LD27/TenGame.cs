@@ -113,7 +113,7 @@ namespace LD27
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            if (player.Is("slowed"))
+            if (!player.Is("attacking") && player.Is("slowed"))
             {
                 player.Speed = player.Get("slowed", 0);
             }
@@ -165,23 +165,26 @@ namespace LD27
             if (kbdState.IsKeyDown(Keys.Z) && !player.Is("attacking"))
             {
                 var loc = WorldMap.GetMoveLocation(AdjustVector2(worldMap.Viewport, screenw / 2, screenh / 2), player.Direction, player.Range);
-                worldMap.Player.Set("attacking", 1f);
+                worldMap.Player.Set("attacking", 0.5f);
                 worldMap.Forces.Add(new Attack()
                 {
-                    Visual = Force.Visuals.Test,
+                    Visual = Force.Visuals.Beam,
                     Sound = Force.Sounds.Flame,
                     Creator = worldMap.Player,
                     WorldMap = worldMap,
                     Damage = player.Attack / 2,
                     Location = loc,
                     Range = player.Range,
-                    Duration = 30,
+                    Duration = 40,
                     Direction = (float)player.Direction,
-                    Speed = 7
+                    Speed = 10,
+                    Piercing =true
 
                 });
-                player.Set("slowed", player.Speed);
-                player.Speed = player.Speed / 2;
+                if (!player.Is("slowed")) {
+                    player.Set("slowed", player.Speed);
+                    player.Speed = player.Speed / 2;
+                }
                 startTime = -1;
             }
 
@@ -200,8 +203,10 @@ namespace LD27
                     Duration = 10,
                     Speed = 0
                 });
-                player.Set("slowed", player.Speed);
-                player.Speed = player.Speed / 4;
+                if (!player.Is("slowed")) {
+                    player.Set("slowed", player.Speed);
+                    player.Speed = player.Speed / 4;
+                }
 
             }
 

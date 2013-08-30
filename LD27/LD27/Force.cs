@@ -10,7 +10,7 @@ namespace LD27
     {
         public static int lastID;
         public int ID { get; set; } 
-        public enum Visuals { Test, Test2, Bloody, Explosion }
+        public enum Visuals { Test, Test2, Bloody, Explosion, Beam }
         public enum Sounds { Default, Flame, Explosion };
         protected bool _isApplied;
         public bool IsApplied { get {
@@ -47,20 +47,26 @@ namespace LD27
         public float Range { get; set; }
         public float Damage { get; set; }
         public float Duration { get; set; }
+        public bool Piercing { get; set; }
         private Creature _creature;
 
 
         public Attack(Creature creature) {
             _creature = creature;
-            _apply = this.Apply;
-            Duration = 20;
+            Initialize();
         }
 
         public Attack() 
         {
             _creature = null;
+            Initialize();
+             
+        }
+
+        public void Initialize() {
             _apply = this.Apply;
-            Duration = 20;           
+            Duration = 20;
+            Piercing = false;
         }
 
         public new void Apply() {
@@ -70,12 +76,14 @@ namespace LD27
                     .FirstOrDefault((c)=>((WorldMap.GetDistance(self.Location, c.Location) <= self.Range) && c.ID != Creator.ID
                         && !c.Is("dead")));
             }
+            Duration -= 1; //decay in 20 frames at 40fps.
+            if (Duration <= 0)
+            {
+                //self._isApplied = true;
+                self.Remove = true;
+            }
+             
             if (null == _creature) {
-                Duration -= 1; //decay in 20 frames at 40fps.
-                if (Duration <= 0) {
-                    //self._isApplied = true;
-                    self.Remove = true;
-                }
                 this.Location = WorldMap.GetMoveLocation(this.Location, this.Direction, this.Speed);
                 return; 
             }
@@ -91,7 +99,10 @@ namespace LD27
                 }
                 //self.Remove = true;
             }
-            self._isApplied = true;            
+            if (!Piercing)
+            {
+                self._isApplied = true;
+            }
         }
     }
     class Explosion : Force {

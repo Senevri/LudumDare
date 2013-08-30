@@ -196,6 +196,7 @@ namespace LD27
             sfx.DefineAnimation("row2", Enumerable.Range(8,6).ToArray(), 0.200f, false, 1.5f);
             sfx.DefineAnimation("bloody", Enumerable.Range(16, 5).ToArray(), 0.300f, false);
             sfx.DefineAnimation("explosion", Enumerable.Range(0, 7).ToArray(), 0.04f, false, 7);
+            sfx.DefineAnimation("beam", Enumerable.Range(24, 8).ToArray(), 0.200f, false);
             //sfx.Animation = "row2";
 
             
@@ -366,6 +367,9 @@ namespace LD27
                 switch (force.Visual) { 
                     case Force.Visuals.Test:
                         type = "row1";
+                        break;
+                    case Force.Visuals.Beam:
+                        type = "beam";
                         break;
                     case Force.Visuals.Test2:
                         type = "row2";
