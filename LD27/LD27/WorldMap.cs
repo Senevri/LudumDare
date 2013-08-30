@@ -47,7 +47,7 @@ namespace LD27
             screenh = device.PresentationParameters.BackBufferHeight;
             aspect = device.Viewport.AspectRatio;
             // enable endgame for testing            
-            EndGame = true;
+            //EndGame = true;
                         
             this.Portals = new List<SpawnPortal>();
             this.Creatures = new List<Creature>();
@@ -131,7 +131,7 @@ namespace LD27
                             case "FirstBoss":
                                 Creatures.Add(new Creature() {
                                     Attack = 10,
-                                    Health = 200,
+                                    Health = 500,
                                     Range = 128, 
                                     Location = new Vector2(tiledobj.X + tiledobj.Width / 2, tiledobj.Y + tiledobj.Height / 2),
                                     ID = Creatures.Count,

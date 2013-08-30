@@ -170,7 +170,7 @@ namespace LD27
                 worldMap.Forces.Add(new Attack()
                 {
                     Visual = Force.Visuals.Beam,
-                    Sound = Force.Sounds.Flame,
+                    Sound = Force.Sounds.Beam,
                     Creator = worldMap.Player,
                     WorldMap = worldMap,
                     Damage = player.Attack / 2,
@@ -187,6 +187,7 @@ namespace LD27
                     player.Speed = player.Speed / 2;
                 }
                 startTime = -1;
+                engine.PlaySound("beam");
             }
 
             if (kbdState.IsKeyDown(Keys.X) && !player.Is("attacking"))
@@ -222,6 +223,16 @@ namespace LD27
                     if (null != card)
                     {
                         card.Apply(worldMap, worldMap.Player);
+                        switch (card.Type) {
+                            case Card.Types.Heal: 
+                                engine.PlaySound("heal");
+                                break;
+                            case Card.Types.Sign: 
+                                engine.PlaySound("seal");
+                                break;
+                            default:
+                                break;
+                        }
                     }
                 }
             }

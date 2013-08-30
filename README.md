@@ -12,8 +12,7 @@ A disaster happens every ten seconds. Can you keep up?
 In actuality, monsters spawn from portals, and you have to do clean-up.
 
 ###Todo:
- - Death Animations working proper-like
- - Better attack 
+ - Death Animations working proper-like
   - Threat level
    - more concrete display? 
  - Upgrades
@@ -22,8 +21,12 @@ In actuality, monsters spawn from portals, and you have to do clean-up.
  - Graphics
   - draw-scan-paint-etc.
  - Refactor
+ - Enemy health display
 
 ###Done:
+ - Zoom
+ - Transparencies
+ - Better attack 
  - Assert different tile sizes work.
  - Scaling tiles and sprites
  - Threat Level display

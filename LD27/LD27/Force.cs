@@ -11,7 +11,7 @@ namespace LD27
         public static int lastID;
         public int ID { get; set; } 
         public enum Visuals { Test, Test2, Bloody, Explosion, Beam }
-        public enum Sounds { Default, Flame, Explosion };
+        public enum Sounds { Default, Flame, Explosion, Beam };
         protected bool _isApplied;
         public bool IsApplied { get {
             return _isApplied;

@@ -56,6 +56,7 @@ namespace LD27
             this.sprites = new Dictionary<string, SpriteSheet>();
             this.namedQuads = new Dictionary<string, PositionedQuad>();
             this.Sounds = new Dictionary<string, SoundEffect>();
+            this.PlayingSounds = new Dictionary<string, SoundEffectInstance>();
 
             aspect = GraphicsDevice.Viewport.AspectRatio;
 
@@ -91,13 +92,22 @@ namespace LD27
             Effect.DirectionalLight2.Enabled = false;
              */
         }
+        public Dictionary<string, SoundEffectInstance> PlayingSounds {get; set; }
 
         public SoundEffectInstance PlaySound(string sound) {
             if (!Sounds.ContainsKey(sound)) { return null; }
-            var instance = Sounds[sound].CreateInstance();
+            SoundEffectInstance instance;
+            if (!PlayingSounds.ContainsKey(sound))
+            {
+                instance = Sounds[sound].CreateInstance();
+                PlayingSounds[sound] = instance;
+            }
+            else {
+                instance = PlayingSounds[sound];
+            }
             instance.Volume = 0.3f;
             instance.IsLooped = false;
-            instance.Play();
+            instance.Play();            
             return instance;
         }
 
@@ -131,6 +141,9 @@ namespace LD27
             Sounds.Add("attack", Content.Load<SoundEffect>("Laser_Shoot"));
             AddSound("flame", "Flame2");
             AddSound("explosion", "Explosion");
+            AddSound("beam", "Laser2");
+            AddSound("heal", "Heart");
+            AddSound("seal", "Sign");
 
 
             NewMapTexture(screenw, screenh);
@@ -377,9 +390,7 @@ namespace LD27
                     }
                 }                
                 
-            }
-
-            
+            }            
             
 
             foreach (var loc in WorldMap.Locations) {
@@ -611,6 +622,9 @@ namespace LD27
                         case Force.Sounds.Flame:
                             sound = "flame";
                             break;
+                        case Force.Sounds.Beam:
+                            //sound = "beam";
+                            break;
                         case Force.Sounds.Explosion:
                             sound = "explosion";
                             break;
@@ -630,7 +644,10 @@ namespace LD27
                     }
                     else
                     {
-                        attackSound.Add(force.Sound, PlaySound(sound));
+                        if (!sound.Equals(string.Empty))
+                        {
+                            attackSound.Add(force.Sound, PlaySound(sound));
+                        }
                     }        
                 }
             }
