@@ -174,14 +174,16 @@ namespace LD27
 
             var enemies = AddSpriteSheet("enemies", Textures["youmaspritesheet"], Vector2.Zero, false, false);
             enemies.Delay = 0.5f;
-            enemies.DefineAnimation ("small", new int[] { 0, 1});
+            enemies.DefineAnimation ("small", new int[] { 0, 1}, 0.5f, true, 0.8f);
             enemies.DefineAnimation("medium", new int[] { 8, 9 });
-            enemies.DefineAnimation("large", new int[] { 16, 17 });
-            enemies.DefineAnimation("itcomes", new int[] { 24, 25, 26 });
+            enemies.DefineAnimation("large", new int[] { 16, 17 }, 0.5f, true, 1.3f);
+            enemies.DefineAnimation("itcomes", new int[] { 24, 25, 26 }, 0.4f, true, 1.5f);
+            enemies.DefineAnimation("boss", new int[] { 24, 25, 26 }, 0.4f, true, 2.5f);
             enemies.DefineAnimation("small_dead", new int[] { 2, 3 }, 0.5f, false);
             enemies.DefineAnimation("medium_dead", new int[] { 4, 5 }, 0.5f, false);
             enemies.DefineAnimation("large_dead", new int[] { 18, 19 }, 0.5f, false);
             enemies.DefineAnimation("itcomes_dead", new int[] { 27, 28 }, 0.5f, false);
+            enemies.DefineAnimation("boss_dead", new int[] { 27,28}, 0.4f, true, 2.5f);
             
             enemies.DefineAnimation("test", Enumerable.Range(0, 64).ToArray());
             //enemies.Animation  ="test";            
@@ -315,6 +317,9 @@ namespace LD27
                         break;
                     case Creature.Types.BEWARE:
                         type = "itcomes";
+                        break;
+                    case Creature.Types.BOSS:
+                        type = "boss";
                         break;
 
                     default:

@@ -13,7 +13,7 @@ namespace LD27
     class Creature
     {
         public static int lastID;
-        public enum Types {CIVILIAN, PLAYER, SMALL, MEDIUM, LARGE, BEWARE}
+        public enum Types { CIVILIAN, PLAYER, SMALL, MEDIUM, LARGE, BEWARE, BOSS }
         public Vector2 Location { get; set; }
         public Types Type { get; set; }
         public Queue<Card> Cards { get; set; }

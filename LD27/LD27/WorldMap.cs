@@ -116,6 +116,25 @@ namespace LD27
                             isOpen = false
                         });
                     }
+                    else if (tiledobj.Name.Equals("BossSpawn")) {
+                        var bosstype = tiledobj.Properties["BossType"];
+                        switch (bosstype) { 
+                            case "FirstBoss":
+                                Creatures.Add(new Creature() {
+                                    Attack = 10,
+                                    Health = 200,
+                                    Range = 128, 
+                                    Location = new Vector2(tiledobj.X + tiledobj.Width/2, tiledobj.Y + tiledobj.Height/2),
+                                    ID = Creatures.Count,
+                                    Type = Creature.Types.BOSS,
+                                    Speed = 4,
+                                    AIScript = Creature.ChargePlayerIfInRange
+                                });
+                                break;
+                            default:
+                                throw new NotImplementedException();                                
+                        }
+                    }
                     else if (tiledobj.Name.Equals("Location"))
                     {
                         if (tiledobj.Properties.ContainsKey("LocationType"))

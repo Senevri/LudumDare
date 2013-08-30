@@ -109,6 +109,14 @@
  </layer>
  <objectgroup name="Object Layer 1" width="10" height="10">
   <object name="Start" type="start" x="257" y="446" width="122" height="122"/>
-  <object name="BossSpawn" type="spawn" x="255" y="65" width="128" height="129"/>
+  <object name="BossSpawn" type="spawn" x="255" y="65" width="128" height="129">
+   <properties>
+    <property name="BossType" value="FirstBoss"/>
+   </properties>
+  </object>
+  <object name="SpawnPortal" type="spawn" x="62" y="61" width="64" height="67"/>
+  <object name="SpawnPortal" type="spawn" x="512" y="60" width="64" height="67"/>
+  <object name="SpawnPortal" type="spawn" x="66" y="511" width="64" height="67"/>
+  <object name="SpawnPortal" type="spawn" x="512" y="509" width="64" height="67"/>
  </objectgroup>
 </map>
