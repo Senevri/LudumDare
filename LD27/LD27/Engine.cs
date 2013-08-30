@@ -71,7 +71,7 @@ namespace LD27
             
             
             Textures = new Dictionary<string, Texture2D>();
-            Camera = new Vector3(0, 0, 1);
+            Camera = new Vector3(0, 0, 0.2f);
             Target = new Vector3(0, 0, -1);
             vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, this.namedQuads.Count * 6, BufferUsage.WriteOnly);
         }
@@ -102,6 +102,7 @@ namespace LD27
         }
 
         private float  defaultScale = 64f / 480f;
+        private Vector2 MapAspect;
 
         internal void AddSound(string name, string resource) 
         {
@@ -118,7 +119,6 @@ namespace LD27
             //load textures
             Textures.Add("test", Content.Load<Texture2D>("testTexture"));
             Textures.Add("bmpFont", Content.Load<Texture2D>("bmpFont"));
-            Textures.Add("mapRender", WorldMap.GetMapImage());
             Textures.Add("playerspritesheet", Content.Load<Texture2D>("playerspritesheet"));
             Textures.Add("youmaspritesheet", Content.Load<Texture2D>("youmaspritesheet"));
             Textures.Add("tilesheet", Content.Load<Texture2D>("tilesheet"));
@@ -133,18 +133,7 @@ namespace LD27
             AddSound("explosion", "Explosion");
 
 
-
-            Effect.Texture = Textures["mapRender"];
-
-            float testScale = 64f / (screenh);
-            defaultScale = testScale;
-
-            namedQuads.Add("map", new PositionedQuad(aspect,1f)
-            {
-                Texture = Textures["mapRender"],
-                Position = new Vector2(Camera.X, Camera.Y),
-                Show = true
-            });
+            NewMapTexture(screenw, screenh);
 
             var cards = AddSpriteSheet("cards", Textures["misc"], Vector2.Zero, true, true);
             cards.SetTileSize(64, 128);
@@ -188,13 +177,13 @@ namespace LD27
             enemies.DefineAnimation("test", Enumerable.Range(0, 64).ToArray());
             //enemies.Animation  ="test";            
             
-            var timer = AddSpriteSheet("timer", Textures["bmpFont"], PixelPositionToVector2(screenw / 2, 32));
+            var timer = AddSpriteSheet("timer", Textures["bmpFont"], FixedPixelPositionToVector2(screenw / 2, 32));
             
             var sfx = AddSpriteSheet("sfx", Textures["sfx"], Vector2.Zero, false, false);
             sfx.Delay = 0.200f;
             sfx.DefineAnimation("row1", Enumerable.Range(0, 4).ToArray(), 0.200f, false);
-            sfx.DefineAnimation("row2", Enumerable.Range(7,6).ToArray(), 0.150f, false, 1.5f, 0.5f);
-            sfx.DefineAnimation("bloody", Enumerable.Range(15, 5).ToArray(), 0.300f, false);
+            sfx.DefineAnimation("row2", Enumerable.Range(7,6).ToArray(), 0.150f, false, 1.5f, 0.7f);
+            sfx.DefineAnimation("bloody", Enumerable.Range(15, 5).ToArray(), 0.080f, false, 1, 0.8f);
             sfx.DefineAnimation("explosion", Enumerable.Range(0, 7).ToArray(), 0.04f, false, 7, 0.7f);
             sfx.DefineAnimation("beam", Enumerable.Range(23, 8).ToArray(), 0.200f, false, 1, 0.7f);
             //sfx.Animation = "row2";
@@ -205,6 +194,36 @@ namespace LD27
             timer.Animation = "timer";
 
             vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, namedQuads.Count * 6, BufferUsage.WriteOnly);
+        }
+
+        private void NewMapTexture(int screenw, int screenh)
+        {            
+            Textures["mapRender"] =  WorldMap.GetMapImage();
+            Effect.Texture = Textures["mapRender"];
+
+            float testScale = 64f / (screenh);
+            defaultScale = testScale;
+
+            var map = Textures["mapRender"];
+            //var mapx = (map.Width > screenw) ? Textures["mapRender"].Width / screenw : 1;
+            //var mapy = (map.Height > screenh) ? Textures["mapRender"].Height / screenh : 1;
+            var mapx = Textures["mapRender"].Width / (float)screenw;
+            var mapy = Textures["mapRender"].Height / (float)screenh;
+
+            MapAspect = new Vector2(mapx / mapy, mapy / mapx);
+
+            var loc = this.WorldMap.WorldMapLocationToVector2(this.WorldMap.Player.Location);
+
+            namedQuads["map"] = new PositionedQuad(aspect * mapx, 1f * mapy)
+            {
+                Texture = Textures["mapRender"],
+                Position = new Vector2(0,0),
+                Show = true
+            };
+            Camera = new Vector3(loc.X, loc.Y, Camera.Z);
+            Target = new Vector3(loc.X, loc.Y, -1);
+           
+            WorldMap.MapChanged = false;
         }
         
 
@@ -234,6 +253,7 @@ namespace LD27
             
             fx = (float)(aspect * ((2.0 * (double)x / (double)GraphicsDevice.Viewport.Bounds.Width)));
             fy = (float)(-2.0 * (double)y / (double)GraphicsDevice.Viewport.Bounds.Height);
+            
             return new Vector2(fx-aspect, fy+1);
 
         }
@@ -258,11 +278,14 @@ namespace LD27
             }
             delta = gameTime.TotalGameTime.TotalSeconds;
 
-            namedQuads["map"].Texture = WorldMap.GetMapImage();
             // portals rendered in wrong spots; why?  
             foreach (var portal in WorldMap.Portals) {
-                //var v = PixelPositionToVector2((int)((loc.X - WorldMap.X) + loc.Width / 2), (int)((loc.Y - WorldMap.Y) + loc.Height / 2));
-                var v = PixelPositionToVector2((int)(portal.Location.X - WorldMap.X), (int)(portal.Location.Y - WorldMap.Y));
+                //var v = PixelPositionToVector2((int)((portal.Location.X - WorldMap.X)), (int)((portal.Location.Y - WorldMap.Y)));
+                /*var v = PixelPositionToVector2(
+                    (int)((portal.Location.X- (WorldMap.MapWidth/2))), 
+                    (int)((portal.Location.Y- (WorldMap.MapHeight/2)))
+                    );*/
+                var v = this.WorldMap.WorldMapLocationToVector2(portal.Location);
                 if (portal.isOpen) {                    
                     sprites["tiles"].AddAnimation("portal", v, portal.ID);                     
                 }
@@ -272,21 +295,24 @@ namespace LD27
             }
             sprites["tiles"].PruneUnusedAnimations(WorldMap.Portals.Where((x)=>(x.isOpen)).Select((x)=>(x.ID)));
             
+            var playerLocation = WorldMap.WorldMapLocationToVector2(WorldMap.Player.Location);
+            //playerLocation = new Vector2(loc.X/aspect, loc.Y);
             //renderQuads.AddRange(sprites.Values);
             var player = sprites["player"];
+
             if (WorldMap.Player.Is("attacking"))
             {                
                 if (player.Animation == "idle")
                 {
                     player.Animations.Clear();
-                    player.AddAnimation("attack", WorldMap.Player.Location, WorldMap.Player.ID);             
-                }                
-                //WorldMap.Player.Unset("attacking");                                
+     
+                }
+                player.AddAnimation("attack", playerLocation, WorldMap.Player.ID);             
             }
             else 
             {  
-                player.Animations.Clear();                
-                 player.AddAnimation("idle", WorldMap.Player.Location, WorldMap.Player.ID);
+                player.Animations.Clear();
+                player.AddAnimation("idle", playerLocation, WorldMap.Player.ID);
             }
             
             //sprites["player"].PruneUnusedAnimations(new int [] {9999});
@@ -301,7 +327,13 @@ namespace LD27
             sprites["enemies"].PruneUnusedAnimations(WorldMap.Creatures.Select((i) => (i.ID)), true);
             
             foreach (var enemy in WorldMap.Creatures) {
-                var enemylocation = PixelPositionToVector2((int)(enemy.Location.X - WorldMap.X), (int)(enemy.Location.Y - WorldMap.Y));
+                var enemylocation = WorldMap.WorldMapLocationToVector2(enemy.Location);
+                //var enemylocation = PixelPositionToVector2((int)(enemy.Location.X - WorldMap.X), (int)(enemy.Location.Y - WorldMap.Y));
+                if (enemy.Is("hurt")) {
+                    sprites["sfx"].AddAnimation("bloody", enemylocation, enemy.ID);
+                    enemy.Set("hurt", enemy.Get("hurt")-0.1f);
+                }
+
                 string type = string.Empty;
                 switch (enemy.Type) { 
                     case Creature.Types.PLAYER:
@@ -352,7 +384,7 @@ namespace LD27
 
             foreach (var loc in WorldMap.Locations) {
                 if (WorldMap.EndGame && loc.Type == "EndGame") {
-                    var v = PixelPositionToVector2((int)((loc.X - WorldMap.X) + loc.Width/2), (int)((loc.Y - WorldMap.Y) + loc.Height/2));
+                    var v = WorldMap.WorldMapLocationToVector2(new Vector2(loc.X, loc.Y));
                     var misc = sprites["misc"];
                     misc.AddAnimation("bigportal", v, 1234);                    
                     }
@@ -362,7 +394,8 @@ namespace LD27
             var sfx = sprites["sfx"];
             //Console.WriteLine("sfx count: {0}, creature count: {1}", WorldMap.Forces.Count, WorldMap.Creatures.Count);
             foreach (var force in WorldMap.Forces) { 
-                var v = PixelPositionToVector2((int)(force.Location.X - WorldMap.X), (int)(force.Location.Y - WorldMap.Y));
+                //var v = PixelPositionToVector2((int)(force.Location.X), (int)(force.Location.Y));
+                var v = WorldMap.WorldMapLocationToVector2(force.Location);
                 sfx.Delay = 0.250f;
                 string type = string.Empty;
                 switch (force.Visual) { 
@@ -377,7 +410,7 @@ namespace LD27
                         break;
                     case Force.Visuals.Bloody:
                         type = "bloody";
-                        v = TenGame.AdjustVector2(WorldMap.Viewport, screenw / 2, screenh / 2);
+                        v = FixedPixelPositionToVector2(screenw / 2, screenh / 2);
                         break;
                     case Force.Visuals.Explosion:
                         type = "explosion";
@@ -402,6 +435,8 @@ namespace LD27
                 }
             }
             sprites["sfx"].PruneUnusedAnimations(WorldMap.Forces.Select((i) => (i.ID)));
+            
+          
 
             //sprites["cards"].PruneUnusedAnimations(WorldMap.Player.Cards.Select((i) => ((int)i.Type)));
             sprites["cards"].ClearAnimations();
@@ -430,7 +465,7 @@ namespace LD27
             
             foreach (var sprite in sprites.Values) {
                 foreach (var anim in sprite.Animations) {
-                    var tile = sprite.GetPositionedTile(sprite.Tiles[anim.getNextAllowedIndex((float)gameTime.TotalGameTime.TotalSeconds)], anim.Position);
+                    var tile = sprite.GetPositionedTile(sprite.Tiles[anim.getNextAllowedIndex((float)gameTime.TotalGameTime.TotalSeconds)], anim.Position, Camera.Z);
                     verts.AddRange(tile);
                 }
             }
@@ -464,7 +499,9 @@ namespace LD27
                 //Console.WriteLine("Animations for {0}: {1}", kvpair.Key, sheet.Animations.Count);
                 foreach (var anim in sheet.Animations)
                 {
-                    RenderVertices(GraphicsDevice, sheet.Sheet, sheet.GetPositionedTile(sheet.Tiles[anim.CurrentFrame], anim.Position, anim.Scale, anim.Angle), anim.Opacity);
+                    RenderVertices(GraphicsDevice, sheet.Sheet, 
+                        sheet.GetPositionedTile(sheet.Tiles[anim.CurrentFrame], anim.Position, anim.Scale, anim.Angle, Camera.Z), 
+                        anim.Opacity);
                 }
             }
 
@@ -476,9 +513,9 @@ namespace LD27
             float fx = 0;
             float fy = 0;
 
-            fx = Camera.X + (float)(aspect * ((2.0 * (double)x / (double)GraphicsDevice.Viewport.Bounds.Width)));
-            fy = Camera.Y + (float)(-2.0 * (double)y / (double)GraphicsDevice.Viewport.Bounds.Height);
-            return new Vector2(fx - aspect, fy + 1);
+            fx = ((Camera.X / (5 * Camera.Z)) + (float)(aspect * (2.0 * (double)x / (double)GraphicsDevice.Viewport.Bounds.Width)));
+            fy = ((Camera.Y / (5 * Camera.Z)) + ((float)(-2.0 * (double)y / (double)GraphicsDevice.Viewport.Bounds.Height)));
+            return new Vector2((fx - aspect)* (Camera.Z*5), (fy + 1) * Camera.Z*5);
 
         }        
 
@@ -519,26 +556,24 @@ namespace LD27
             //var ticks = DateTime.Now.Ticks;
             this.viewMatrix = Matrix.CreateLookAt(Camera, Target, Vector3.Up);
             this.worldMatrix = Matrix.CreateWorld(Vector3.Backward, Vector3.Forward, Vector3.Up);
-            //this.projectionMatrix = Matrix.CreatePerspective(GraphicsDevice.Viewport.AspectRatio, 1.0f, 0.5f, 100.0f);
-            this.projectionMatrix = Matrix.CreateOrthographic(2f*GraphicsDevice.Viewport.AspectRatio, 2f, 0.1f, 100f);
+            this.projectionMatrix = Matrix.CreatePerspective(GraphicsDevice.Viewport.AspectRatio, 1.0f, 0.1f, 100.0f);
+            //this.projectionMatrix = Matrix.CreateOrthographic(2f*GraphicsDevice.Viewport.AspectRatio, 2f, 0.1f, 100f);
 
             int screenw = GraphicsDevice.Viewport.Bounds.Width;
-            int screenh = GraphicsDevice.Viewport.Bounds.Height;            
+            int screenh = GraphicsDevice.Viewport.Bounds.Height;
+            if (WorldMap.MapChanged) {
+                NewMapTexture(screenw, screenh);                
+            }
                         
             //if (gameTime.TotalGameTime.TotalSeconds - delta > 0.1)
             //{
 
             //}
-            namedQuads["map"].Position = new Vector2(Camera.X, Camera.Y);
+            //namedQuads["map"].Position = new Vector2(Camera.X, Camera.Y);
            
-            sprites["player"].Position = new Vector2(Camera.X, Camera.Y);
-            sprites["timer"].Position = new Vector2(Camera.X, Camera.Y + 0.8f);
-        
-            WorldMap.Player.Location = new Vector2(Camera.X,Camera.Y);
-            //positionedQuads.Add(Write("this is a test", 400, 300, new Vector3(0, 0, 0), 0.8f));
-            //positionedQuads.Add(Write(string.Format("{0:0}", seconds), screenw/2, 32, new Vector3(0, 0, 0), 0.1f));
-            //Effect.Texture = null;
-            //positionedQuads[3].Rotation = new Vector3((float)(25 * Math.PI / 180), 0, 0);
+            WorldMap.Player.Location = WorldMap.ConvertLocationToPixelPosition(new Vector2(Camera.X/aspect, Camera.Y));
+                        
+            sprites["timer"].Position = FixedPixelPositionToVector2(screenw / 2, 32);            
             var seconds = (float)gameTime.TotalGameTime.TotalSeconds - prevSeconds;
             WorldMap.Update(seconds, gameTime);
             if (!WorldMap.Disaster) {
@@ -559,7 +594,9 @@ namespace LD27
             vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, quadCount * 6, BufferUsage.WriteOnly);
 
             //Console.WriteLine("Engine Update time: {0}", DateTime.Now.Ticks - ticks);
+               
             if (WorldMap.Player.Is("hurt")) {
+                sprites["sfx"].AddAnimation("bloody", FixedPixelPositionToVector2(screenw/2, screenh/2), 9998);          
                 PlaySound("hurt");
                 WorldMap.Player.Set("hurt", 0);
             }

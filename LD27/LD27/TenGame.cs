@@ -104,7 +104,7 @@ namespace LD27
         protected override void Update(GameTime gameTime)
         {             
             Creature player = worldMap.Player;
-            if (worldMap.WinCondition || player.Health <= 0) {
+            if (worldMap.WinCondition || player.Health <= 0) {               
                 HandleKeyboard();
                 return;
             }
@@ -118,9 +118,7 @@ namespace LD27
                 player.Speed = player.Get("slowed", 0);
             }
             Vector3 shift = HandleKeyboard();
-
-
-                float aspect = GraphicsDevice.Viewport.AspectRatio;
+            float aspect = GraphicsDevice.Viewport.AspectRatio;
             
 
             float targetX = engine.Camera.X + shift.X;
@@ -132,7 +130,7 @@ namespace LD27
             var worldMapTarget = new Vector2(worldMap.X + xpixels, worldMap.Y - ypixels);
             if (!worldMap.Loading)
             {
-                if (worldMap.IsValidPath(worldMap.Viewport, worldMapTarget, (screenw / 2) - 32, (screenh / 2) - 32))
+                if (worldMap.IsValidPath(worldMap.Viewport, worldMapTarget, (worldMap.MapWidth/2)-32, (worldMap.MapHeight/2)-32))
                 {
 
                     engine.Camera = new Vector3(engine.Camera.X + shift.X, engine.Camera.Y + shift.Y, engine.Camera.Z + shift.Z);
@@ -141,7 +139,7 @@ namespace LD27
                     worldMap.Viewport = worldMapTarget;
 
                     // keep player  at the center of the screen.
-                    worldMap.Player.Location = worldMap.Viewport;
+                    //worldMap.Player.Location = worldMap.ConvertLocationToPixelPosition(worldMap.Viewport);
                 }
             }
 
@@ -155,6 +153,9 @@ namespace LD27
         {
             var player = worldMap.Player;
             KeyboardState kbdState = Keyboard.GetState();
+            if (kbdState.IsKeyDown(Keys.LeftShift)) {
+                Console.WriteLine("viewport: x{0} y{1}", worldMap.Viewport.X, worldMap.Viewport.Y);
+            }
 
             float xshift = 0;
             float yshift = 0;
@@ -164,7 +165,7 @@ namespace LD27
             player.Get("attacking", player.Get("attacking") - 0.1f);
             if (kbdState.IsKeyDown(Keys.Z) && !player.Is("attacking"))
             {
-                var loc = WorldMap.GetMoveLocation(AdjustVector2(worldMap.Viewport, screenw / 2, screenh / 2), player.Direction, player.Range);
+                var loc = WorldMap.GetMoveLocation(player.Location, player.Direction, player.Range);
                 worldMap.Player.Set("attacking", 0.5f);
                 worldMap.Forces.Add(new Attack()
                 {
@@ -198,7 +199,7 @@ namespace LD27
                     Creator = worldMap.Player,
                     WorldMap = worldMap,
                     Damage = 4 * player.Attack,
-                    Location = AdjustVector2(worldMap.Viewport, screenw / 2, screenh / 2),
+                    Location = player.Location,
                     Range = player.Range * 1.5f,
                     Duration = 20,
                     Speed = 0
@@ -251,12 +252,12 @@ namespace LD27
 
             if (kbdState.IsKeyDown(Keys.PageUp))
             {
-                zshift -= 0.05f;
+                zshift -= 0.01f;
             }
 
             if (kbdState.IsKeyDown(Keys.PageDown))
             {
-                zshift += 0.05f;
+                zshift += 0.01f;
             }
 
 

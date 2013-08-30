@@ -90,9 +90,10 @@ namespace LD27
 
             if (WorldMap.GetDistance(self.Location, _creature.Location) <= self.Range)
             {
+                self._creature.Set("hurt");
                 self._creature.Health -= Damage;
                 self._creature.Set("hurt");
-                if (self._creature.Health <= 0)
+                if (self._creature.Health <= 0 && !(self._creature.Is("dead")))
                 {
                     self._creature.Set("dead", 4);
                     Creator.Kills += 1;
@@ -129,7 +130,7 @@ namespace LD27
                     (WorldMap.GetDistance(c.Location, this.Location)<=this.Range))
                 {
                     c.Health -= this.Damage;
-                    if (c.Health <= 0) {
+                    if (c.Health <= 0 && !(c.Is("dead"))) {
                         c.Set("dead", 4);
                         Creator.Kills++;
                     }

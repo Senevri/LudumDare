@@ -204,7 +204,7 @@ namespace LD27
         }
 
         
-        public Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] GetPositionedTile(TexturedQuad Tile, Vector2 Position, float scale=1, float angle = 0) {                       
+        public Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] GetPositionedTile(TexturedQuad Tile, Vector2 Position, float scale=1, float angle = 0, float cameraZ = -1f) {                       
             VertexPositionNormalTexture[] outVerts = new VertexPositionNormalTexture[6];
             for (int i = 0; i<Tile.Vertices.Length; i++) {                    
                 outVerts[i].TextureCoordinate = Tile.Vertices[i].TextureCoordinate;
@@ -215,16 +215,16 @@ namespace LD27
                 outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationY(Rotation.Y));
                 outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationZ(Rotation.Z));                    
                  */
+                
                 outVerts[i].Position = Tile.Vertices[i].Position;
                 if (angle != 0) {
                     outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationZ(-angle));                    
                 }
-
                 if (scale != 1)
                 {
                     outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateScale(scale));
                 } 
-                outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateTranslation(new Vector3(Position.X, Position.Y, -1.0f)));                                    
+                outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateTranslation(new Vector3(Position.X, Position.Y, -1f)));                                    
             }
             return outVerts;
         }

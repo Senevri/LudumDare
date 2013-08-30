@@ -11,6 +11,7 @@ namespace LD27
 {
     class WorldMap : IDisposable
     {
+        public bool MapChanged;
         public Vector2 Viewport { get; set; }
         public List<Creature> Creatures { get; set; }        
         public Creature Player { get; set; }
@@ -20,6 +21,11 @@ namespace LD27
         public List<Force> Forces { get; set; } 
         public float X { get; set; }
         public float Y { get; set; }
+        private int screenw;
+        private int screenh;
+        private float aspect;
+        public int MapWidth { get; set; }
+        public int MapHeight { get; set; }
         public int TerrorLevel { get; set; }
         public bool Disaster { get; set; }
 
@@ -28,8 +34,6 @@ namespace LD27
         private GraphicsDevice device;
         private ContentManager content;
         private double previousUpdateTotalSeconds;
-        private int screenw;
-        private int screenh;
         private int totalKills = 0;
         public bool EndGame { get; set; }
         public bool WinCondition { get; set; }
@@ -41,21 +45,10 @@ namespace LD27
             this.content = content;
             screenw = device.PresentationParameters.BackBufferWidth;
             screenh = device.PresentationParameters.BackBufferHeight;
-
+            aspect = device.Viewport.AspectRatio;
             // enable endgame for testing            
             EndGame = true;
-            
-
-            renderTarget = new RenderTarget2D(
-                device,
-                screenw,
-                screenh,
-                //1024, 
-                //1024,
-                false,
-                device.PresentationParameters.BackBufferFormat,
-                DepthFormat.Depth24);
-
+                        
             this.Portals = new List<SpawnPortal>();
             this.Creatures = new List<Creature>();
             this.Forces = new List<Force>();
@@ -63,6 +56,7 @@ namespace LD27
 
 
             InitializePlayer();
+            //LoadMap("BossFight.tmx");
             LoadMap("WorldMap.tmx");
 
             
@@ -94,6 +88,20 @@ namespace LD27
         {
             this.Loading = true;
             map = Squared.Tiled.Map.Load(String.Format("Content\\{0}", mapname), content);
+            MapWidth = map.Width*map.TileWidth;
+            MapHeight = map.Height * map.TileHeight;
+            MapWidth = (MapWidth > screenw) ? MapWidth : screenw;
+            MapHeight = (MapHeight > screenh) ? MapWidth : screenh;
+            renderTarget = new RenderTarget2D(
+                device,
+                MapWidth,
+                MapHeight,
+                //1024, 
+                //1024,
+                false,
+                device.PresentationParameters.BackBufferFormat,
+                DepthFormat.Depth24);
+
 
             Random random = new Random();
             foreach (var grp in map.ObjectGroups)
@@ -104,14 +112,15 @@ namespace LD27
                     if (tiledobj.Name.Equals("Start"))
                     {
                         Console.WriteLine("object: {0}, x {1} y {2} width {3} height {4}", tiledobj.Name, tiledobj.X, tiledobj.Y, tiledobj.Width, tiledobj.Height);
-                        Player.Location = new Vector2(tiledobj.X + tiledobj.Width / 2, tiledobj.Y + tiledobj.Height / 2);
+                        Player.Location = new Vector2(tiledobj.X + tiledobj.Width/2, tiledobj.Y + tiledobj.Width/2);
+                        
                     }
                     else if (tiledobj.Name.Equals("SpawnPortal"))
                     {
                         Portals.Add(new SpawnPortal()
                         {
                             CreatureTypes = new Creature.Types[] { Creature.Types.SMALL, Creature.Types.MEDIUM },
-                            Location = new Vector2(tiledobj.X + tiledobj.Width / 2, tiledobj.Y + tiledobj.Height / 2),                           
+                            Location = new Vector2(tiledobj.X + tiledobj.Width / 2, tiledobj.Y + tiledobj.Height / 2),
                             Size = random.Next(1, 6),
                             isOpen = false
                         });
@@ -124,7 +133,7 @@ namespace LD27
                                     Attack = 10,
                                     Health = 200,
                                     Range = 128, 
-                                    Location = new Vector2(tiledobj.X + tiledobj.Width/2, tiledobj.Y + tiledobj.Height/2),
+                                    Location = new Vector2(tiledobj.X + tiledobj.Width / 2, tiledobj.Y + tiledobj.Height / 2),
                                     ID = Creatures.Count,
                                     Type = Creature.Types.BOSS,
                                     Speed = 4,
@@ -141,8 +150,8 @@ namespace LD27
                         {
                             Locations.Add(new Location()
                             {
-                                X = tiledobj.X,
-                                Y = tiledobj.Y,
+                                X = tiledobj.X + tiledobj.Width/2,
+                                Y = tiledobj.Y + tiledobj.Height/2,
                                 Type = tiledobj.Properties["LocationType"],
                                 Width = tiledobj.Width,
                                 Height = tiledobj.Height,
@@ -150,11 +159,15 @@ namespace LD27
                         }
                     }
                 }
+                MapChanged = true;
             }
 
-            this.Viewport = new Vector2(Player.Location.X - (screenw / 2), Player.Location.Y - (screenh / 2));
-            X = this.Viewport.X;
-            Y = this.Viewport.Y;
+            //this.Viewport = new Vector2(-(map.Width*map.TileWidth / 2f), - (map.Height*map.TileHeight / 2f));
+            this.Viewport = new Vector2(0, 0);
+            //X = this.MapWidth / 2;
+            //Y = this.MapHeight / 2;
+            X = this.Viewport.X / 2;
+            Y = this.Viewport.Y / 2;
             this.Loading = false;
         }
 
@@ -210,17 +223,21 @@ namespace LD27
 
                 previousUpdateTotalSeconds = gameTime.TotalGameTime.TotalSeconds;
                 if (this.EndGame) {
-                    float x = 0, y= 0;
+                    float x = 0, y= 0, w=0, h=0;
 
                     foreach (Location l in Locations) { 
                         if (l.Type == "EndGame") {
                             x = l.X;
                             y = l.Y;
+                            w = l.Width;
+                            h = l.Height;
+                            
                         }
                     }
-                    var a = Math.Abs(this.Viewport.X - x);
-                    var b = Math.Abs(this.Viewport.Y - y);
+                    var a = Math.Abs((this.Viewport.X+this.MapWidth/2) - (x+w/2));
+                    var b = Math.Abs((this.Viewport.Y+this.MapHeight/2) - (y+h/2));
                     if ((32 > a) && (32 > b)) {
+                        /* load new map*/
                         this.Forces.Clear();
                         this.Creatures.Clear();
                         this.Portals.Clear();
@@ -320,7 +337,10 @@ namespace LD27
             device.Clear(Color.DarkGray);
             SpriteBatch batch = new SpriteBatch(device);
             batch.Begin();
-            map.Draw(batch, new Rectangle(0,0,(int)(800),480), Viewport);
+            map.Draw(batch, new Rectangle(0,0,
+                map.Width*map.TileWidth,
+                map.Height*map.TileHeight                
+                ), Viewport);
             batch.End();
             batch.Dispose();
             device.SetRenderTarget(null);
@@ -383,8 +403,8 @@ namespace LD27
         {
             var aspect = device.Viewport.AspectRatio;
             Vector2 Out = new Vector2(
-                ((screenw/2)/aspect)*(1+source.X) + this.X+128+32, // see if we're off by 2x tilewidth FIXME!
-                (screenh/2)*(1-source.Y) + this.Y
+                source.X * (screenw/2f) + MapWidth/2f,
+                -source.Y * (screenh/2f) + MapHeight/2f                
                 );
             return Out;
         }
@@ -431,6 +451,13 @@ namespace LD27
                 this.renderTarget.Dispose();
                 this.renderTarget = null;
             }
+        }
+
+        internal Vector2 WorldMapLocationToVector2(Vector2 orig)
+        {
+            float x = 2*aspect*((orig.X) - (this.MapWidth / 2))/this.screenw;
+            float y = (2*orig.Y - (this.MapHeight))/this.screenh; // screenh = 2
+            return new Vector2(x, -y);
         }
     }
 }

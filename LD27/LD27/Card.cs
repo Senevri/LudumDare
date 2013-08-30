@@ -17,20 +17,14 @@ namespace LD27
             worldMap.Forces.Add(new Explosion() { 
                 WorldMap = worldMap, 
                 Creator = creature, Duration = 40, 
-                Location = TenGame.AdjustVector2(worldMap.Viewport, TenGame.screenw / 2, TenGame.screenh / 2),                
+                Location = creature.Location,
                 Damage = 100, Range = 64*3});
         }
 
         public static void SignFunc(WorldMap worldMap, Creature creature)
         {
             Vector2 v;
-            if (creature.Type == Creature.Types.PLAYER)
-            {
-                v = new Vector2(worldMap.Viewport.X + TenGame.screenw / 2f, worldMap.Viewport.Y + TenGame.screenh / 2);
-            }
-            else {
-                v = creature.Location;
-            }
+            v = creature.Location;
             if (worldMap.Portals.Count > 0)
             {
                 var portal = worldMap.Portals.OrderBy((p) => (worldMap.GetDistance(v.X, v.Y, p.Location.X, p.Location.Y))).First();

@@ -129,13 +129,13 @@ namespace LD27
                 //creature.Set("charging", creature.Speed);
             }            
 
-            if (random < 0.975) { return; };
+            if (random < 0.95) { return; };
             creature.Set("charging", creature.Speed);
-            var distance = worldMap.GetDistance(creature.Location, worldMap.ConvertLocationToPixelPosition(worldMap.Player.Location));
+            var distance = worldMap.GetDistance(creature.Location, worldMap.Player.Location);
             if (distance < (5 * creature.Range)) {
                 creature.Speed = 12-(int)creature.Type;
 
-                creature.Direction = worldMap.GetAngle(creature.Location, worldMap.ConvertLocationToPixelPosition(worldMap.Player.Location));
+                creature.Direction = worldMap.GetAngle(creature.Location, worldMap.Player.Location);
                 if (distance < creature.Range) {
                     worldMap.Forces.Add(
                             new Attack(worldMap.Player){ 
