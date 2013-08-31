@@ -274,6 +274,14 @@ namespace LD27
 
             if (kbdState.IsKeyDown(Keys.Enter))
             {
+                if (kbdState.IsKeyDown(Keys.LeftAlt)) {
+                    graphics.IsFullScreen = !graphics.IsFullScreen;
+                    if (!graphics.IsFullScreen) {
+                        graphics.PreferredBackBufferWidth = 800;
+                        graphics.PreferredBackBufferHeight = 480;
+                    }
+                    graphics.ApplyChanges();
+                }
                 if (player.Health <= 0 || worldMap.WinCondition)
                 {
                     //player.Health = 100;
