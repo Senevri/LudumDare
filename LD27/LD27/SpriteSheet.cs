@@ -155,6 +155,7 @@ namespace LD27
                     var tq=new TexturedQuad(){
                         ScaleX = (this.ScaleX / columns/this.ScaleX),
                         ScaleY = (this.ScaleY / rows),
+                        ScaleZ = (1f),
                         Texture = this._spriteSheet
                     };
                     tq.GenerateVerticesWithSubsection(x*tileWidth, y*tileHeight, tileWidth, tileHeight);
@@ -217,14 +218,26 @@ namespace LD27
                  */
                 
                 outVerts[i].Position = Tile.Vertices[i].Position;
+                
                 if (angle != 0) {
                     outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationZ(-angle));                    
                 }
                 if (scale != 1)
                 {
                     outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateScale(scale));
-                } 
-                outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateTranslation(new Vector3(Position.X, Position.Y, -1f)));                                    
+                }
+
+                //if (this.CameraPosition != Vector3.Zero)
+                //{
+                    //var rcam = new Vector3(0, -0.1f, 1f);
+                    //outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateLookAt(outVerts[i].Position, rcam, Vector3.Up));
+                    outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationX((float)0.5f));
+                    //outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationY(Rotation.Y));
+                    //outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateRotationZ(Rotation.Z));                    
+
+                //}
+
+                outVerts[i].Position = Vector3.Transform(outVerts[i].Position, Matrix.CreateTranslation(new Vector3(Position.X, Position.Y, -0.95f)));                                    
             }
             return outVerts;
         }
@@ -287,6 +300,8 @@ namespace LD27
         internal void ClearAnimations() {
             this._animations.Clear();
         }
+
+        public Vector3 CameraPosition { get; set; }
     }
 
 }

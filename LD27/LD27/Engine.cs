@@ -112,6 +112,8 @@ namespace LD27
         }
 
         private float  defaultScale = 64f / 480f;
+        //private float defaultScale = 10f;
+        
         private Vector2 MapAspect;
 
         internal void AddSound(string name, string resource) 
@@ -187,7 +189,7 @@ namespace LD27
             enemies.DefineAnimation("itcomes_dead", new int[] { 27, 28 }, 0.5f, false);
             enemies.DefineAnimation("boss_dead", new int[] { 27,28}, 0.4f, true, 2.5f);
             
-            enemies.DefineAnimation("test", Enumerable.Range(0, 64).ToArray());
+            enemies.DefineAnimation("test", Enumerable.Range(0, 64).ToArray());           
             //enemies.Animation  ="test";            
             
             var timer = AddSpriteSheet("timer", Textures["bmpFont"], FixedPixelPositionToVector2(screenw / 2, 32));
@@ -215,7 +217,8 @@ namespace LD27
             Effect.Texture = Textures["mapRender"];
 
             float testScale = 64f / (screenh);
-            defaultScale = testScale;
+            //defaultScale = testScale;
+            defaultScale = 0.08f;
 
             var map = Textures["mapRender"];
             //var mapx = (map.Width > screenw) ? Textures["mapRender"].Width / screenw : 1;
@@ -233,8 +236,8 @@ namespace LD27
                 Position = new Vector2(0,0),
                 Show = true
             };
-            Camera = new Vector3(loc.X, loc.Y, Camera.Z);
-            Target = new Vector3(loc.X, loc.Y, -1);
+            Camera = new Vector3(loc.X, loc.Y - 0.2f, Camera.Z);
+            Target = new Vector3(loc.X, loc.Y, -1000);
            
             WorldMap.MapChanged = false;
         }
@@ -247,7 +250,7 @@ namespace LD27
             sprites.Add(name, new SpriteSheet(texture, GraphicsDevice) { 
                 //ScaleX = aspect, 
                 ScaleX = aspect*defaultScale*8,
-                ScaleY = 1*defaultScale*8
+                ScaleY = 1*defaultScale*8,                      
             }); // , 64, 64, 8, aspect, 1           
             var sprite = sprites.Values.Last();
             sprite.GenerateTiles();
@@ -335,6 +338,7 @@ namespace LD27
 
 
             var enemies = sprites["enemies"];
+            enemies.CameraPosition = Camera;
             //enemies.Current = 0;
             //enemies.SetTileToCurrent(GraphicsDevice);            
             sprites["enemies"].PruneUnusedAnimations(WorldMap.Creatures.Select((i) => (i.ID)), true);

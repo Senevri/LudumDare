@@ -23,6 +23,9 @@ namespace LD27
             if (ScaleY == 0) {
                 ScaleY = ScaleX;
             }
+            if (ScaleZ == 0) {
+                ScaleZ = 1f;
+            }
             //GenerateVertices();
         }
 
