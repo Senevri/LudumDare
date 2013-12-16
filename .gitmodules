@@ -1,0 +1,3 @@
+[submodule "LD28"]
+	path = LD28
+	url = git@github.com:Senevri/LudumDare-LD28.git

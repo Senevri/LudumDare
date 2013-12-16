@@ -279,6 +279,7 @@ namespace LD27
                     if (!graphics.IsFullScreen) {
                         graphics.PreferredBackBufferWidth = 800;
                         graphics.PreferredBackBufferHeight = 480;
+                        
                     }
                     graphics.ApplyChanges();
                 }
