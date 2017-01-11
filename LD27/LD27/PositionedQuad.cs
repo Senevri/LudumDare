@@ -13,8 +13,8 @@ namespace LD27
         public Vector3 Rotation { get; set; }
         //public Microsoft.Xna.Framework.Graphics.Texture2D Texture { get; set; }
         private VertexPositionNormalTexture[] _vertices;
-        private float aspect;
-        private int p;
+        //private float aspect;
+        //private int p;
         public new Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] Vertices {
             get {
                 if (this._vertices == null) { GenerateVertices(); };

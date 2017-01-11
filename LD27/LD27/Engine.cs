@@ -10,10 +10,10 @@ namespace LD27
 {
     class Engine : IDisposable
     {
-        private Microsoft.Xna.Framework.Graphics.GraphicsDevice GraphicsDevice;
-        private Microsoft.Xna.Framework.Matrix viewMatrix;
-        private Microsoft.Xna.Framework.Matrix projectionMatrix;
-        private Microsoft.Xna.Framework.Matrix worldMatrix;
+        private GraphicsDevice GraphicsDevice;
+        private Matrix viewMatrix;
+        private Matrix projectionMatrix;
+        private Matrix worldMatrix;
         private VertexBuffer vertexBuffer;
         
         private Dictionary<string, PositionedQuad> namedQuads;
@@ -34,14 +34,14 @@ namespace LD27
 
         private float aspect;
 
-        public Engine(Microsoft.Xna.Framework.Graphics.GraphicsDevice GraphicsDevice)
+        public Engine(GraphicsDevice GraphicsDevice)
         {
             // TODO: Complete member initialization
             this.GraphicsDevice = GraphicsDevice;
             this.Initialize();
         }
 
-        public Engine(Microsoft.Xna.Framework.Graphics.GraphicsDevice GraphicsDevice, Microsoft.Xna.Framework.Content.ContentManager Content)
+        public Engine(GraphicsDevice GraphicsDevice, Microsoft.Xna.Framework.Content.ContentManager Content)
         {
             this.GraphicsDevice = GraphicsDevice;
             this.Content = Content;
@@ -74,7 +74,7 @@ namespace LD27
             Textures = new Dictionary<string, Texture2D>();
             Camera = new Vector3(0, 0, 0.2f);
             Target = new Vector3(0, 0, -1);
-            vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, this.namedQuads.Count * 6, BufferUsage.WriteOnly);
+            //vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, typeof(VertexPositionColor), this.namedQuads.Count * 6, BufferUsage.WriteOnly,);
         }
 
         public Vector2 GetScreenUpperLeft() {
@@ -117,8 +117,25 @@ namespace LD27
         private Vector2 MapAspect;
 
         internal void AddSound(string name, string resource) 
-        {
-            Sounds.Add(name, Content.Load<SoundEffect>(resource));            
+        { //workaround for Content.Load<SoundEffect> not working.
+            var f = System.IO.File.Exists("Content\\" + resource + ".wav");
+            var path = System.IO.Directory.GetCurrentDirectory();
+            Console.WriteLine(path);
+
+            SoundEffect file = null;            
+            if (f)
+            {
+                file = SoundEffect.FromStream(System.IO.File.OpenRead("Content\\" + resource + ".wav"));
+                file.Name = name;                
+                int i = file.Duration.Milliseconds;
+                Console.WriteLine("lenght:", i);
+            }
+            else {
+                throw new Exception("File not found: " + resource);
+            }
+
+
+            Sounds.Add(name, file);            
         }
 
         /**
@@ -137,10 +154,10 @@ namespace LD27
             Textures.Add("sfx", Content.Load<Texture2D>("specialeffects"));
             Textures.Add("misc", Content.Load<Texture2D>("misctiles"));
 
-            // load sounds
-            Sounds.Add("hurt", Content.Load<SoundEffect>("Hit_Hurt"));
-            Sounds.Add("timer", Content.Load<SoundEffect>("Timer"));
-            Sounds.Add("attack", Content.Load<SoundEffect>("Laser_Shoot"));
+            // load sounds                        
+            AddSound("timer", "Timer");
+            AddSound("hurt", "Hit_Hurt");
+            AddSound("attack", "Laser_Shoot");
             AddSound("flame", "Flame2");
             AddSound("explosion", "Explosion");
             AddSound("beam", "Laser2");
@@ -208,7 +225,7 @@ namespace LD27
             System.Diagnostics.Debug.Assert(timer.AnimationDefinitions["timer"].FrameIndexes.Contains(41));            
             timer.Animation = "timer";
 
-            vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, namedQuads.Count * 6, BufferUsage.WriteOnly);
+            //vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, namedQuads.Count * 6, BufferUsage.WriteOnly);
         }
 
         private void NewMapTexture(int screenw, int screenh)
@@ -274,7 +291,7 @@ namespace LD27
 
         }
 
-        float newAngle = 0;
+        //float newAngle = 0;
 
         /*
          * Draw
@@ -296,6 +313,7 @@ namespace LD27
 
             // portals rendered in wrong spots; why?  
             foreach (var portal in WorldMap.Portals) {
+                //Console.WriteLine("Portal: " + portal.ToString());
                 //var v = PixelPositionToVector2((int)((portal.Location.X - WorldMap.X)), (int)((portal.Location.Y - WorldMap.Y)));
                 /*var v = PixelPositionToVector2(
                     (int)((portal.Location.X- (WorldMap.MapWidth/2))), 
@@ -453,7 +471,6 @@ namespace LD27
             
           
 
-            //sprites["cards"].PruneUnusedAnimations(WorldMap.Player.Cards.Select((i) => ((int)i.Type)));
             sprites["cards"].ClearAnimations();
             int xshift = 0;
             foreach (var card in WorldMap.Player.Cards) {
@@ -473,19 +490,40 @@ namespace LD27
                     sprites["cards"].AddAnimation(type, FixedPixelPositionToVector2((64*xshift)+64, screenh-67), xshift);
                 }
                 xshift++;
-            }
-            
+            }            
+
 
             verts.AddRange(namedQuads["map"].Vertices);
-            
+
+            sprites["cards"].AddAnimation("sign", new Vector2(0.0f, 0.0f));
+
+            sprites["cards"].AddAnimation("heal", new Vector2(0.2f, 0.0f));
+
+
+            sprites["cards"].AddAnimation("bomb", FixedPixelPositionToVector2(screenw - 64, screenh - 64));
+
             foreach (var sprite in sprites.Values) {
                 foreach (var anim in sprite.Animations) {
                     var tile = sprite.GetPositionedTile(sprite.Tiles[anim.getNextAllowedIndex((float)gameTime.TotalGameTime.TotalSeconds)], anim.Position, Camera.Z);
                     verts.AddRange(tile);
                 }
             }
+
+            if (null != vertexBuffer)
+            {
+                if (vertexBuffer.VertexCount < verts.Count)
+                {
+                    //overflow      
+                    Console.WriteLine("Vertexcount:" + verts.Count);
+                    vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, typeof(VertexPositionNormalTexture), verts.Count * 10, BufferUsage.WriteOnly); 
+                }
+                else
+                {
+                    vertexBuffer.SetData(verts.ToArray());
+                }
+            }
             
-            vertexBuffer.SetData(verts.ToArray());
+            //vertexBuffer.SetData<VertexPositionNormalTexture>(0, verts.ToArray(), 0, verts.Count, 32);
 
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
             
@@ -571,33 +609,32 @@ namespace LD27
             //var ticks = DateTime.Now.Ticks;
             this.viewMatrix = Matrix.CreateLookAt(Camera, Target, Vector3.Up);
             this.worldMatrix = Matrix.CreateWorld(Vector3.Backward, Vector3.Forward, Vector3.Up);
-            this.projectionMatrix = Matrix.CreatePerspective(GraphicsDevice.Viewport.AspectRatio, 1.0f, 0.1f, 100.0f);
-            //this.projectionMatrix = Matrix.CreateOrthographic(2f*GraphicsDevice.Viewport.AspectRatio, 2f, 0.1f, 100f);
+            //this.projectionMatrix = Matrix.CreatePerspective(GraphicsDevice.Viewport.AspectRatio, 1.0f, 0.1f, 100.0f);
+            this.projectionMatrix = Matrix.CreateOrthographic(2f * GraphicsDevice.Viewport.AspectRatio, 2f, 0.1f, 100f);
+            
 
             int screenw = GraphicsDevice.Viewport.Bounds.Width;
             int screenh = GraphicsDevice.Viewport.Bounds.Height;
             if (WorldMap.MapChanged) {
-                NewMapTexture(screenw, screenh);                
+                NewMapTexture(screenw, screenh);
             }
-                        
+
             //if (gameTime.TotalGameTime.TotalSeconds - delta > 0.1)
             //{
 
             //}
             //namedQuads["map"].Position = new Vector2(Camera.X, Camera.Y);
-           
-            WorldMap.Player.Location = WorldMap.ConvertLocationToPixelPosition(new Vector2(Camera.X/aspect, Camera.Y));
-                        
-            sprites["timer"].Position = FixedPixelPositionToVector2(screenw / 2, 32);            
+
+            WorldMap.Player.Location = WorldMap.ConvertLocationToPixelPosition(new Vector2(Camera.X / aspect, Camera.Y));
+
+            sprites["timer"].Position = FixedPixelPositionToVector2(screenw / 2, 32);
             var seconds = (float)gameTime.TotalGameTime.TotalSeconds - prevSeconds;
-            WorldMap.Update(seconds, gameTime);
-            if (!WorldMap.Disaster) {
-                //sprites["timer"].isAnimated = true;
-            }
-            if (seconds >= 10.0f)
-            {
+            if (WorldMap.Update(seconds, gameTime)) {
                 prevSeconds = (float)gameTime.TotalGameTime.TotalSeconds;
                 PlaySound("timer");
+            }
+            if (!WorldMap.Disaster) {
+                //sprites["timer"].isAnimated = true;
             }
 
             //if (null != vertexBuffer) { vertexBuffer.Dispose(); vertexBuffer = null;  }
@@ -606,7 +643,8 @@ namespace LD27
                 quadCount += sprite.Value.Animations.Count;
             }
 
-            vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, quadCount * 6, BufferUsage.WriteOnly);
+            //6 for quad, 2 for normal, 2 for texture
+            vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, typeof(VertexPositionNormalTexture), quadCount * (6+2+2), BufferUsage.WriteOnly);
 
             //Console.WriteLine("Engine Update time: {0}", DateTime.Now.Ticks - ticks);
                

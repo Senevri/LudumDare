@@ -7,7 +7,7 @@ namespace LD27
 {
     class Location
     {
-        public static int lastID;
+        //public static int lastID;
         public int ID { get; set; } 
         public float X { get; set; }
         public float Y { get; set; }

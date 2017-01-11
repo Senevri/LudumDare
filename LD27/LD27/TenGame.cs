@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Storage;
-using Microsoft.Xna.Framework.GamerServices;
+//using MonoGame.Framework.Net.GamerServices;
 #endregion
 
 namespace LD27
@@ -314,7 +314,7 @@ namespace LD27
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
 
-            if (worldMap.Player.Health <= 0 ||worldMap.WinCondition) {
+            if (worldMap.Player.Health <= 0 || worldMap.WinCondition) {
                 Texture2D texture;
                 if (worldMap.Player.Is("TerrorDeath")) {
                     texture = Textures["terrorscreen"];
@@ -326,7 +326,7 @@ namespace LD27
                 }
                 
                 spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
-                spriteBatch.GraphicsDevice.SamplerStates[0].Filter = TextureFilter.Point;
+                spriteBatch.GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
                 spriteBatch.Draw(texture,
                     new Rectangle(0,0,GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height), 
                     new Rectangle(0,0,320,200), Color.White);
@@ -337,7 +337,7 @@ namespace LD27
                 engine.Draw(GraphicsDevice, gameTime);
 
                 spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
-                spriteBatch.GraphicsDevice.SamplerStates[0].Filter = TextureFilter.Point;
+                spriteBatch.GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
                 spriteBatch.Draw(flatTextures,
                     new Rectangle(3, 3, 8, (int)(GraphicsDevice.Viewport.Height - 6) * (int)worldMap.Player.Health / 100), 
                     new Rectangle(0, 0, 64, 64), Color.White, 0, Vector2.Zero,

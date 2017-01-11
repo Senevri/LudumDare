@@ -1,6 +1,23 @@
 LudumDare
 =========
 
+#Ludum Dare 36
+**Theme: Ancient Technology**
+
+##Concept:
+ - ??
+
+#Ludum Dare 35
+
+**Theme: Shapeshift** 
+
+##Oops
+Current time: Sunday, 16:44. Or, we had LD today?
+
+##Concept
+ - Consume, gain attributes, transform?
+ - Alt forms? Mimicry?
+
 ##Ludum Dare #28
 
 **Theme: You Only Get One**

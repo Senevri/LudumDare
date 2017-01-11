@@ -29,7 +29,7 @@ namespace LD27
 
         public float Delay { get; set; }
 
-        private double lastFrameShown;
+        //private double lastFrameShown;
 
         private Vector2 _position;
         public Vector2 Position { get { return _position; }
@@ -41,7 +41,7 @@ namespace LD27
             }
         }
 
-        private Texture2D _texture;
+        //private Texture2D _texture;
         /*public Texture2D Texture { 
             get {                
                 //_spriteSheet = base.Texture;
@@ -91,7 +91,7 @@ namespace LD27
 
         //public Dictionary<string, int[]> AnimationIndexes;
         //private PositionedQuad pq;
-        private SpriteSheet sheet;
+        //private SpriteSheet sheet;
         
         public SpriteSheet(Texture2D texture) {
             this.Initialize();
@@ -205,7 +205,7 @@ namespace LD27
         }
 
         
-        public Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture[] GetPositionedTile(TexturedQuad Tile, Vector2 Position, float scale=1, float angle = 0, float cameraZ = -1f) {                       
+        public VertexPositionNormalTexture[] GetPositionedTile(TexturedQuad Tile, Vector2 Position, float scale=1, float angle = 0, float cameraZ = -1f) {                       
             VertexPositionNormalTexture[] outVerts = new VertexPositionNormalTexture[6];
             for (int i = 0; i<Tile.Vertices.Length; i++) {                    
                 outVerts[i].TextureCoordinate = Tile.Vertices[i].TextureCoordinate;

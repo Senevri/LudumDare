@@ -174,21 +174,25 @@ namespace LD27
         /* 
          * World Update Function
          */
-        public void Update(float time, GameTime gameTime) {
+        public bool Update(float time, GameTime gameTime) {
             //var ticks = DateTime.Now.Ticks;
+            bool retval = false;
             if (previousUpdateTotalSeconds == 0) { previousUpdateTotalSeconds = gameTime.TotalGameTime.TotalSeconds; }
             Random random = new Random();
             double timeDelta = gameTime.TotalGameTime.TotalSeconds - previousUpdateTotalSeconds;
-            if ((time >= 10) && timeDelta > 0.025) {
+            if ((time >= 10)/* && timeDelta > 0.025*/) {
                 TenSecondUpdate(time, random);
                 this.Disaster = false;
+                retval = true;
             }
 
             if (timeDelta > 0.025) {//40fps 
-                // infinte bombs for testin
-                /*if (Player.Cards.Count == 0) {
-                    Player.AddCard(Card.Types.Sign);
-                }*/
+                // infinite bombs for testin
+                
+                //if (Player.Cards.Count == 0) {
+                //    Player.AddCard(Card.Types.Sign);
+                //};
+                
 
                 foreach (var creature in this.Creatures) {
                     if (creature.Is("dead")) {
@@ -256,6 +260,7 @@ namespace LD27
                 EndGame = true;
             }
             //Console.WriteLine("WorldMap Update time: {0}", DateTime.Now.Ticks - ticks);
+            return retval;
         }
 
         private void TenSecondUpdate(float time, Random random)
@@ -272,8 +277,7 @@ namespace LD27
             var validPortals = this.Portals.Where((p) => (!p.Destroyed)).ToList();
 
             if (validPortals.Count > 0)
-            {
-                
+            {                
                 int openingPortalIndex = random.Next(0, validPortals.Count - 1);
                 if (validPortals[openingPortalIndex].isOpen)
                 {
@@ -317,7 +321,8 @@ namespace LD27
                     }
                     else
                     {
-                        portal.Size += 1f;
+                        //portal.Size += 1f;
+                        portal.Size = 1f;
                     }
                 }
                 if (!portal.Destroyed) {
